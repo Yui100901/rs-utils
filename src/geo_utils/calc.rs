@@ -1,16 +1,17 @@
 use std::f64::consts::PI;
 use crate::geo_utils::coordinate::{AzimuthOffset, Coordinate, CoordinateOffset};
+use log::info;
 
 /// 地球平均半径
 const EARTH_RADIUS: f64 = 6371_393.0;
 
 /// 传入点p，方向角正北为0（以度为单位），移动的距离（以米为单位）
 pub fn exec_offset(p: &Coordinate, cf: &CoordinateOffset) -> Coordinate {
-    println!("当前位置：{}, {}", p.longitude, p.latitude);
+    info!("当前位置：{}, {}", p.longitude, p.latitude);
 
     let new_longitude = p.longitude + cf.longitude_offset;
     let new_latitude = p.latitude + cf.latitude_offset;
-    println!("偏移位置：{}, {}", new_longitude, new_latitude);
+    info!("偏移位置：{}, {}", new_longitude, new_latitude);
     Coordinate::new(new_longitude, new_latitude)
 }
 

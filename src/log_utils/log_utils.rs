@@ -1,4 +1,4 @@
-use log::LevelFilter;
+use log::{info, LevelFilter};
 use std::io::Write;
 use std::sync::Once;
 
@@ -33,4 +33,5 @@ pub fn init_logger() {
             .filter(None, LevelFilter::Info)
             .init();
     });
+    info!("Logger init finished!")
 }
