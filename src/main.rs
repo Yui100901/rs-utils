@@ -1,33 +1,53 @@
-mod network;
+use log::{error, info, warn};
 
-use std::collections::HashMap;
-use std::error::Error;
-use network::http_utils::http_utils::HttpUtils;
+mod log_utils;
+mod http_utils;
 
-// 示例主函数调用
+mod file_utils;
+mod config;
+mod command_utils;
+mod git_utils;
+
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
-    let http_utils = HttpUtils::new();
+async fn main() {
+    log_utils::init_logger();
+    info!("This is an info message");
+    warn!("This is a warning message");
+    error!("This is an error message");
+    let c=http_utils::HttpUtils::new();
+    match file_utils::traverse_dir_files(".", false){
+        Ok((files, dirs)) => {
+            info!("Files:");
+            for file in files {
+                info!("{}", file.display());
+            }
 
-    // 示例GET请求
-    match http_utils.get_by_query("https://www.baidu.com", None).await {
-        Ok(response) => println!("GET响应: {}", response),
-        Err(e) => eprintln!("GET请求失败: {}", e),
+            info!("Directories:");
+            for dir in dirs {
+                info!("{}", dir.display());
+            }
+        }
+        Err(e) => error!("Error:\n{}", e),
     }
-
-    // 示例POST请求 (JSON)
-    match http_utils.post_by_json("https://api.example.com/data", Some(serde_json::json!({"key": "value"}))).await {
-        Ok(response) => println!("POST JSON响应: {}", response),
-        Err(e) => eprintln!("POST JSON请求失败: {}", e),
-    }
-
-    // 示例POST请求 (表单)
-    let mut form_data = HashMap::new();
-    form_data.insert("key".to_string(), "value".to_string());
-    match http_utils.post_by_form("https://api.example.com/data", Some(form_data)).await {
-        Ok(response) => println!("POST表单响应: {}", response),
-        Err(e) => eprintln!("POST表单请求失败: {}", e),
-    }
-
-    Ok(())
+    match command_utils::run_command("cmd", &["/c","echo","Hello, world!"]){
+        Ok(output) => info!("Output:\n{}", output),
+        Err(e) => error!("Error:\n{}", e),
+    };
+    match command_utils::run_command("cmd", &["/c","java","--version"]){
+        Ok(output) => info!("Output:\n{}", output),
+        Err(e) => error!("Error:\n{}", e),
+    };
+    match command_utils::run_command("java", &["--version"]){
+        Ok(output) => info!("Output:\n{}", output),
+        Err(e) => error!("Error:\n{}", e),
+    };
+    match git_utils::clone_latest("https://github.com/Yui100901/rs-utils.git", "main","./rs-utils"){
+        Ok(output) => info!("Output:\n{}", output),
+        Err(e) => error!("Error:\n{}", e),
+    };
+    // // 示例GET请求
+    // match c.get_by_query("https://www.baidu.com", None).await {
+    //     Ok(response) => info!("GET响应: {}", response),
+    //     Err(e) => error!("GET请求失败: {}", e),
+    // }
 }
