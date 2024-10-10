@@ -1,6 +1,6 @@
-use std::sync::Once;
 use log::{info, LevelFilter};
 use std::io::Write;
+use std::sync::Once;
 
 static INIT: Once = Once::new();
 

@@ -15,7 +15,11 @@ impl HttpUtils {
     }
 
     /// 发送一个HTTP GET请求到指定的URL，并附带查询参数
-    pub async fn get_by_query(&self, api_url: &str, req_data: Option<HashMap<String, String>>) -> Result<String, Box<dyn Error>> {
+    pub async fn get_by_query(
+        &self,
+        api_url: &str,
+        req_data: Option<HashMap<String, String>>,
+    ) -> Result<String, Box<dyn Error>> {
         let mut url = reqwest::Url::parse(api_url)?;
 
         if let Some(data) = req_data {
@@ -30,7 +34,11 @@ impl HttpUtils {
     }
 
     /// 发送一个带有JSON数据的HTTP POST请求到指定的URL
-    pub async fn post_by_json<T: Serialize>(&self, api_url: &str, req_data: Option<T>) -> Result<String, Box<dyn Error>> {
+    pub async fn post_by_json<T: Serialize>(
+        &self,
+        api_url: &str,
+        req_data: Option<T>,
+    ) -> Result<String, Box<dyn Error>> {
         let response = match req_data {
             Some(data) => self.client.post(api_url).json(&data).send().await?,
             None => self.client.post(api_url).send().await?,
@@ -40,7 +48,11 @@ impl HttpUtils {
     }
 
     /// 发送一个带有表单数据的HTTP POST请求到指定的URL
-    pub async fn post_by_form(&self, api_url: &str, req_data: Option<HashMap<String, String>>) -> Result<String, Box<dyn Error>> {
+    pub async fn post_by_form(
+        &self,
+        api_url: &str,
+        req_data: Option<HashMap<String, String>>,
+    ) -> Result<String, Box<dyn Error>> {
         let response = match req_data {
             Some(data) => self.client.post(api_url).form(&data).send().await?,
             None => self.client.post(api_url).send().await?,

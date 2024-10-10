@@ -1,11 +1,9 @@
-use std::process::{Command, Output};
-use std::io;
 use log::{error, info};
+use std::io;
+use std::process::{Command, Output};
 
 pub fn run_command(name: &str, args: &[&str]) -> Result<String, io::Error> {
-    let output = Command::new(name)
-        .args(args)
-        .output()?;
+    let output = Command::new(name).args(args).output()?;
 
     if output.status.success() {
         let stdout = String::from_utf8_lossy(&output.stdout).to_string();

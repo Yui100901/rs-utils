@@ -1,27 +1,27 @@
-use std::{env, fs};
 use serde::Deserialize;
+use std::{env, fs};
 
-#[derive(Debug,Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct Configuration {
     app: AppConfiguration,
     mqtt: MqttConfiguration,
     redis: RedisConfiguration,
 }
 
-#[derive(Debug,Deserialize)]
+#[derive(Debug, Deserialize)]
 struct AppConfiguration {
     name: String,
     version: String,
 }
 
-#[derive(Debug,Deserialize)]
+#[derive(Debug, Deserialize)]
 struct MqttConfiguration {
     url: String,
     username: String,
     password: String,
 }
 
-#[derive(Debug,Deserialize)]
+#[derive(Debug, Deserialize)]
 struct RedisConfiguration {
     url: String,
     password: String,
