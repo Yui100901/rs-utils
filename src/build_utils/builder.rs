@@ -1,95 +1,121 @@
-use crate::{git_utils, log_utils,command_utils};
-use log::{error, info};
-use std::env;
+use std::collections::HashMap;
 use std::fs;
+use std::io::Error;
 use std::path::Path;
 use std::process::Command;
+use crate::{docker_utils, file_utils};
+use crate::command_utils;
 
-/// 表示一个项目仓库
+/// 结构体定义: 存储仓库信息
+#[derive(Debug)]
 struct Repository {
-    url: String,    // 项目仓库的 URL
-    branch: String, // 分支
+    url: String,
+    branch: String,
 }
 
 impl Repository {
-    /// 创建一个新的 Repository 实例
-    fn new(url: &str, branch: &str) -> Self {
-        Self {
-            url: url.to_string(),
-            branch: branch.to_string(),
-        }
+    /// 创建一个新的仓库实例
+    fn new(url: String, branch: String) -> Self {
+        Repository { url, branch }
     }
 
     /// 克隆仓库到指定路径
-    fn clone(&self, path: &str) -> Result<(), Box<dyn std::error::Error>> {
-        git_utils::clone_latest(&self.url, &self.branch, path)?;
-        Ok(())
-    }
-}
+    fn clone(&self, path: &str) -> Result<(), String> {
+        let status = Command::new("git")
+            .args(&["clone", &self.url, "--branch", &self.branch, path])
+            .status()
+            .expect("failed to execute process");
 
-/// 表示一个项目构建器
-pub struct Builder {
-    project_path: String,           // 项目存放路径
-    project_name: String,           // 项目名称
-    project_repository: Repository, // 项目仓库
-    build_message: String,          // 构建信息
-}
-
-impl Builder {
-    /// 创建一个新的 Builder 实例
-    pub fn new(
-        project_path: &str,
-        project_name: &str,
-        project_url: &str,
-        project_branch: &str,
-    ) -> Self {
-        info!("初始化构建器！");
-        info!("项目路径：{} 项目名：{}", project_path, project_name);
-        info!("项目地址：{} 项目分支：{}", project_url, project_branch);
-
-        Self {
-            project_path: project_path.to_string(),
-            project_name: project_name.to_string(),
-            project_repository: Repository::new(project_url, project_branch),
-            build_message: String::new(),
+        if status.success() {
+            Ok(())
+        } else {
+            Err(format!("Failed to clone repository: {}", &self.url))
         }
     }
 
-    /// 克隆项目仓库
-    pub fn clone_repository(&self, force_clone: bool) {
-        if Path::new(&self.project_path).exists() {
+    /// 拉取最新的仓库更改
+    fn pull(&self) -> Result<(), String> {
+        let status = Command::new("git")
+            .arg("pull")
+            .status()
+            .expect("failed to execute process");
+
+        if status.success() {
+            Ok(())
+        } else {
+            Err(String::from("Failed to pull repository"))
+        }
+    }
+}
+
+/// 结构体定义: 存储构建器信息
+#[derive(Debug)]
+struct Builder {
+    path: String,
+    name: String,
+    ports: Vec<String>,
+    repository: Repository,
+    build_message: String,
+}
+
+impl Builder {
+    /// 创建一个新的构建器实例
+    fn new(path: String, name: String, ports: Vec<String>, url: String, branch: String) -> Self {
+        let repository = Repository::new(url, branch);
+        let mut builder = Builder {
+            path,
+            name,
+            ports,
+            repository,
+            build_message: String::new(),
+        };
+        builder.init_info();
+        builder
+    }
+
+    /// 初始化构建器信息
+    fn init_info(&self) {
+        println!("初始化构建器！");
+        println!("项目路径：{}，项目名：{}", self.path, self.name);
+        println!("项目地址：{}，项目分支：{}", self.repository.url, self.repository.branch);
+    }
+
+    /// 克隆或拉取仓库
+    fn clone_repository(&self, force_clone: bool) {
+        if Path::new(&self.path).exists() {
             if force_clone {
-                info!("目录 {} 已存在，删除并重新克隆。", self.project_path);
-                fs::remove_dir_all(&self.project_path).unwrap();
-                self.project_repository.clone(&self.project_path).unwrap();
+                println!("目录 {} 已存在，删除并重新克隆。", self.path);
+                fs::remove_dir_all(&self.path).unwrap();
+                self.repository.clone(&self.path).unwrap();
             } else {
-                info!("目录 {} 已存在，跳过克隆。", self.project_path);
+                self.repository.pull().unwrap();
+                println!("目录 {} 已存在，跳过克隆。", self.path);
             }
         } else {
-            self.project_repository.clone(&self.project_path).unwrap();
+            self.repository.clone(&self.path).unwrap();
         }
     }
 
     /// 构建项目
-    pub fn build(&mut self) {
-        env::set_current_dir(&self.project_path).unwrap();
-        let build_commands: Vec<(&str, fn() -> Result<(), Box<dyn std::error::Error>>)> = vec![
-            ("pom.xml", maven_build),
+    fn build(&mut self) {
+        std::env::set_current_dir(&self.path).unwrap();
+        let build_commands: HashMap<&str, fn() -> Result<String, Error>> = vec![
+            ("pom.xml", maven_build as fn() -> Result<String, Error>),
             ("build.gradle", gradle_build),
             ("requirements.txt", python_build),
             ("package.json", node_build),
             ("go.mod", go_build),
             ("CMakeLists.txt", c_build),
             ("Cargo.toml", rust_build),
-        ];
+        ].into_iter().collect();
 
         let mut build_flag = 0;
 
         for (file, build) in build_commands {
             if Path::new(file).exists() {
                 build_flag += 1;
-                if let Err(e) = build() {
-                    self.build_message = format!("{}项目构建出错:\n{}", self.project_name, e);
+                if let Err(err) = build() {
+                    self.build_message = format!("{}项目构建出错:\n{}", self.name, err);
                     return;
                 }
                 break;
@@ -98,11 +124,12 @@ impl Builder {
 
         if Path::new("Dockerfile").exists() {
             build_flag += 1;
-            command_utils::run_command(
-                "docker",
-                &["build", "-t", &format!("{}:latest", self.project_name), "."],
-            )
-            .unwrap();
+            let slice_of_ports=self.ports.iter().map(AsRef::as_ref).collect();
+            if let Err(err) = docker_utils::rebuild_container(&self.name, &slice_of_ports) {
+                println!("Docker构建失败: {}", err);
+            } else {
+                println!("Docker构建成功");
+            }
         }
 
         let output_info = if build_flag == 0 {
@@ -111,74 +138,59 @@ impl Builder {
             "构建成功！".to_string()
         };
 
-        info!("构建项目 {} 结束。{}", self.project_name, output_info);
-        self.build_message = format!("{}{}", self.project_name, output_info);
+        println!("构建项目 {} 结束。{}", self.name, output_info);
+        self.build_message = format!("{}{}", self.name, output_info);
     }
 }
 
-/// 构建 Maven 项目
-fn maven_build() -> Result<(), Box<dyn std::error::Error>> {
-    info!("构建Maven项目");
-    command_utils::run_command("mvn", &["clean", "package"])?;
-    Ok(())
+/// 执行 Maven 构建
+fn maven_build() -> Result<String, Error> {
+    println!("构建Maven项目");
+    command_utils::run_command("mvn", &["clean", "package"])
 }
 
-/// 构建 Gradle 项目
-fn gradle_build() -> Result<(), Box<dyn std::error::Error>> {
-    info!("构建Gradle项目");
-    command_utils::run_command("gradle", &["build"])?;
-    Ok(())
+/// 执行 Gradle 构建
+fn gradle_build() -> Result<String, Error> {
+    println!("构建Gradle项目");
+    command_utils::run_command("gradle", &["build"])
 }
 
-/// 构建 Python 项目
-fn python_build() -> Result<(), Box<dyn std::error::Error>> {
-    info!("构建Python项目");
-    command_utils::run_command(
-        "pip",
-        &[
-            "install",
-            "-r",
-            "requirements.txt",
-            "-i",
-            "https://pypi.tuna.tsinghua.edu.cn/simple",
-        ],
-    )?;
-    Ok(())
+/// 执行 Python 构建
+fn python_build() -> Result<String, Error> {
+    println!("构建Python项目");
+    command_utils::run_command("pip", &["install", "-r", "requirements.txt", "-i", "https://pypi.tuna.tsinghua.edu.cn/simple"])
 }
 
-/// 构建 Node 项目
-fn node_build() -> Result<(), Box<dyn std::error::Error>> {
-    info!("构建Node项目");
-    command_utils::run_command(
-        "npm",
-        &["install", "--registry=https://registry.npmmirror.com"],
-    )?;
+/// 执行 Node.js 构建
+fn node_build() -> Result<String, Error> {
+    println!("构建Node项目");
+    command_utils::run_command("npm", &["install", "--registry=https://registry.npmmirror.com"])?;
     command_utils::run_command("npm", &["run", "build"])?;
-    Ok(())
+    let work_dir = std::env::current_dir().unwrap();
+    let source = Path::new("/media/zmkj/work/node_file/Cesium.js");
+    let target = work_dir.join("dist/cesium/Cesium.js");
+    file_utils::replace(&source, &target)
 }
 
-/// 构建 Go 项目
-fn go_build() -> Result<(), Box<dyn std::error::Error>> {
-    info!("构建Go项目");
+/// 执行 Go 构建
+fn go_build() -> Result<String, Error> {
+    println!("构建Go项目");
     command_utils::run_command("go", &["env", "-w", "GO111MODULE=on"])?;
     command_utils::run_command("go", &["env", "-w", "GOPROXY=https://goproxy.cn,direct"])?;
-    command_utils::run_command("go", &["build"])?;
-    Ok(())
+    command_utils::run_command("go", &["build"])
 }
 
-/// 构建 C 项目
-fn c_build() -> Result<(), Box<dyn std::error::Error>> {
-    info!("构建C项目");
+/// 执行 C 构建
+fn c_build() -> Result<String, Error> {
+    println!("构建C项目");
     command_utils::run_command("cmake", &[".."])?;
-    command_utils::run_command("make", &[])?;
-    Ok(())
+    command_utils::run_command("make", &[])
 }
 
-/// 构建 Rust 项目
-fn rust_build() -> Result<(), Box<dyn std::error::Error>> {
-    info!("构建Rust项目");
-    command_utils::run_command("cargo", &["build"])?;
-    Ok(())
+/// 执行 Rust 构建
+fn rust_build() -> Result<String, Error> {
+    println!("构建Rust项目");
+    command_utils::run_command("cargo", &["build"])
 }
 
 
