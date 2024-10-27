@@ -1,6 +1,8 @@
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
+use dotenv::Error;
+use log::error;
 
 /// 遍历给定目录并返回文件路径列表
 /// `recursive` 参数表明是否递归遍历子目录
@@ -39,3 +41,13 @@ pub fn traverse_dir_files(dir: &str, recursive: bool) -> io::Result<(Vec<PathBuf
 
     Ok((dirs, files))
 }
+
+/// 替换源文件到目标文件
+pub fn replace(source: &Path, target: &Path) -> Result<String, io::Error> {
+    match fs::copy(source, target) {
+        Ok(_) => Ok(String::from("文件替换成功！")),
+        Err(e) => Err(e),
+    }
+}
+
+
