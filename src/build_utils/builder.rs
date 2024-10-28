@@ -1,16 +1,18 @@
-use crate::command_utils;
-use crate::{docker_utils, file_utils};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::io::Error;
 use std::path::Path;
 use std::process::Command;
+use log::info;
+use crate::{command_utils, docker_utils, file_utils, git_utils};
 
 /// 结构体定义: 存储仓库信息
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize,Deserialize,Default)]
 pub struct Repository {
+    #[serde(default)]
     pub url: String,
+    #[serde(default)]
     pub branch: String,
 }
 
@@ -21,41 +23,33 @@ impl Repository {
     }
 
     /// 克隆仓库到指定路径
-    fn clone(&self, path: &str) -> Result<(), String> {
-        let status = Command::new("git")
-            .args(&["clone", &self.url, "--branch", &self.branch, path])
-            .status()
-            .expect("failed to execute process");
-
-        if status.success() {
-            Ok(())
-        } else {
-            Err(format!("Failed to clone repository: {}", &self.url))
+    pub fn clone(&self, path: &str) {
+        match git_utils::clone_latest(&self.url,&self.branch,path){
+            Ok(s)=>info!("{}",s),
+            Err(e)=>info!("{}",e),
         }
     }
 
     /// 拉取最新的仓库更改
-    fn pull(&self) -> Result<(), String> {
-        let status = Command::new("git")
-            .arg("pull")
-            .status()
-            .expect("failed to execute process");
-
-        if status.success() {
-            Ok(())
-        } else {
-            Err(String::from("Failed to pull repository"))
+    fn pull(&self)  {
+        match git_utils::pull(){
+            Ok(s)=>info!("{}",s),
+            Err(e)=>info!("{}",e),
         }
     }
 }
 
 /// 结构体定义: 存储构建器信息
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize,Deserialize,Default)]
 pub struct Builder {
+    #[serde(default)]
     pub path: String,
     pub name: String,
+    #[serde(default)]
     pub ports: Vec<String>,
+    #[serde(default)]
     pub repository: Repository,
+    #[serde(default)]
     pub build_message: String,
 }
 
@@ -69,7 +63,7 @@ impl Builder {
         branch: String,
     ) -> Self {
         let repository = Repository::new(url, branch);
-        let mut builder = Builder {
+        let builder = Builder {
             path,
             name,
             ports,
@@ -82,27 +76,27 @@ impl Builder {
 
     /// 初始化构建器信息
     fn init_info(&self) {
-        println!("初始化构建器！");
-        println!("项目路径：{}，项目名：{}", self.path, self.name);
-        println!(
+        info!("初始化构建器！");
+        info!("项目路径：{}，项目名：{}", self.path, self.name);
+        info!(
             "项目地址：{}，项目分支：{}",
             self.repository.url, self.repository.branch
         );
     }
 
     /// 克隆或拉取仓库
-    fn clone_repository(&self, force_clone: bool) {
+    pub fn clone_repository(&self, force_clone: bool) {
         if Path::new(&self.path).exists() {
             if force_clone {
-                println!("目录 {} 已存在，删除并重新克隆。", self.path);
+                info!("目录 {} 已存在，删除并重新克隆。", self.path);
                 fs::remove_dir_all(&self.path).unwrap();
-                self.repository.clone(&self.path).unwrap();
+                self.repository.clone(&self.path);
             } else {
-                self.repository.pull().unwrap();
-                println!("目录 {} 已存在，跳过克隆。", self.path);
+                self.repository.pull();
+                info!("目录 {} 已存在，跳过克隆。", self.path);
             }
         } else {
-            self.repository.clone(&self.path).unwrap();
+            self.repository.clone(&self.path);
         }
     }
 

@@ -38,7 +38,8 @@ pub fn remove_image(images: &[&str]) -> Result<String, Error> {
 /// 构建Docker镜像
 pub fn build(name: &str) -> Result<String, Error> {
     info!("构建Docker镜像");
-    command_utils::run_command("docker", &["build", "-t", name, "."])
+    let args=&["build", "-t", name, "."];
+    command_utils::run_command("docker", args)
 }
 
 /// 默认启动Docker容器

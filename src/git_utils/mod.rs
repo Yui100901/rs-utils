@@ -1,5 +1,4 @@
 use crate::command_utils;
-use std::env::args;
 use std::io::{self};
 
 pub fn clone_default(url: &str, branch: &str, dir: &str) -> Result<String, io::Error> {
@@ -28,5 +27,10 @@ pub fn clone_latest(url: &str, branch: &str, dir: &str) -> Result<String, io::Er
 
 pub fn pull() -> Result<String, io::Error> {
     let args = &["pull"];
+    command_utils::run_command("git", args)
+}
+
+pub fn fetch() -> Result<String, io::Error> {
+    let args = &["fetch", "--tags", "--force", "--progress","--"];
     command_utils::run_command("git", args)
 }

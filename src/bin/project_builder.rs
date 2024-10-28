@@ -1,4 +1,4 @@
-use clap::{App, Arg};
+use clap::{ Parser};
 use rs_utils::build_utils::builder::Builder;
 use serde_yaml;
 use std::collections::HashMap;
@@ -7,44 +7,32 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::{fs, thread};
 
-fn main() {
-    let matches = App::new("Project Builder")
-        .version("1.0")
-        .author("Your Name <your.email@example.com>")
-        .about("Builds projects based on provided configurations")
-        .arg(
-            Arg::new("force")
-                .short('f')
-                .long("force")
-                .help("强制克隆仓库")
-                .takes_value(false),
-        )
-        .arg(
-            Arg::new("concurrent")
-                .short('c')
-                .long("concurrent")
-                .help("是否并发构建")
-                .takes_value(false),
-        )
-        .arg(
-            Arg::new("ports")
-                .short('p')
-                .long("ports")
-                .help("端口列表")
-                .takes_value(true),
-        )
-        .arg(
-            Arg::new("path")
-                .help("输入的文件或目录路径")
-                .required(true)
-                .index(1),
-        )
-        .get_matches();
+/// 命令行参数结构体
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    /// 强制克隆仓库
+    #[arg(short, long)]
+    force: bool,
 
-    let force_clone = matches.is_present("force");
-    let concurrent_build = matches.is_present("concurrent");
-    let ports = matches.value_of("ports").unwrap_or("");
-    let path = matches.value_of("path").unwrap();
+    /// 是否并发构建
+    #[arg(short, long)]
+    concurrent: bool,
+
+    /// 端口列表
+    #[arg(long)]
+    ports: Option<String>,
+
+    /// 输入的文件或目录路径
+    path: String,
+}
+
+fn main() {
+    let args = Args::parse();
+    let force_clone = args.force;
+    let concurrent_build = args.concurrent;
+    let ports = args.ports.unwrap_or_else(|| "".to_string());
+    let path = &args.path;
 
     let port_list: Vec<String> = ports.split(',').map(|s| s.to_string()).collect();
     println!("输入路径: {}", path);
@@ -102,6 +90,11 @@ fn main() {
     }
 
     let builder_list = Arc::new(Mutex::new(builder_list));
+
+    let mut builders = builder_list.lock().unwrap();
+    builders.iter_mut().for_each(|builder| {
+        builder.clone_repository(force_clone);
+    });
 
     if concurrent_build {
         let mut handles = vec![];
