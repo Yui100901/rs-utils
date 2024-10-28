@@ -1,8 +1,6 @@
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
-use dotenv::Error;
-use log::error;
 
 /// 遍历给定目录并返回文件路径列表
 /// `recursive` 参数表明是否递归遍历子目录
@@ -49,5 +47,3 @@ pub fn replace(source: &Path, target: &Path) -> Result<String, io::Error> {
         Err(e) => Err(e),
     }
 }
-
-

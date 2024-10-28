@@ -23,16 +23,10 @@ pub fn clone_latest(url: &str, branch: &str, dir: &str) -> Result<String, io::Er
         url,
         dir,
     ];
-    command_utils::run_command(
-        "git",
-        args
-    )
+    command_utils::run_command("git", args)
 }
 
-pub fn pull()-> Result<String, io::Error> {
+pub fn pull() -> Result<String, io::Error> {
     let args = &["pull"];
-    command_utils::run_command(
-        "git",
-        args
-    )
+    command_utils::run_command("git", args)
 }
