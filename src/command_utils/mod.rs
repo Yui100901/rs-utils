@@ -1,6 +1,5 @@
-use log::{error, info};
 use std::io;
-use std::process::{Command, Output};
+use std::process::{Command};
 
 pub fn run_command(name: &str, args: &[&str]) -> Result<String, io::Error> {
     let output = Command::new(name).args(args).output()?;

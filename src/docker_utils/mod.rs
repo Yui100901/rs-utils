@@ -1,7 +1,7 @@
+use crate::command_utils;
+use log::{error, info};
 use std::io::Error;
 use std::process::Command;
-use log::{info, error};
-use crate::command_utils;
 
 /// 停止docker容器
 pub fn stop_container(containers: &[&str]) -> Result<String, Error> {
@@ -44,13 +44,22 @@ pub fn build(name: &str) -> Result<String, Error> {
 /// 默认启动Docker容器
 pub fn default_run(name: &str, ports: &[&str]) -> Result<String, Error> {
     info!("默认启动");
-    let mut args = vec!["run", "-d", "--name", name, "-v", "/etc/localtime:/etc/localtime:ro"];
+    let mut args: Vec<String> = vec![
+        "run".into(),
+        "-d".into(),
+        "--name".into(),
+        name.into(),
+        "-v".into(),
+        "/etc/localtime:/etc/localtime:ro".into(),
+    ];
+    let mut ports_mappings: Vec<String> = Vec::new();
     for p in ports {
-        args.push("-p");
-        args.push(&format!("{}:{}", p, p));
+        ports_mappings.push(format!("{}:{}", p, p));
     }
-    args.push(&format!("{}:latest", name));
-    command_utils::run_command("docker", &args)
+    args.append(&mut ports_mappings);
+    args.push(format!("{}:latest", name));
+    let args_ref: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
+    command_utils::run_command("docker", &args_ref)
 }
 
 /// 重新构建Docker容器
@@ -61,4 +70,3 @@ pub fn rebuild_container(name: &str, ports: &[&str]) -> Result<String, Error> {
     build(name)?;
     default_run(name, ports)
 }
-

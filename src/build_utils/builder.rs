@@ -1,16 +1,17 @@
+use crate::command_utils;
+use crate::{docker_utils, file_utils};
+use serde::Deserialize;
 use std::collections::HashMap;
 use std::fs;
 use std::io::Error;
 use std::path::Path;
 use std::process::Command;
-use crate::{docker_utils, file_utils};
-use crate::command_utils;
 
 /// 结构体定义: 存储仓库信息
-#[derive(Debug)]
-struct Repository {
-    url: String,
-    branch: String,
+#[derive(Debug, Deserialize)]
+pub struct Repository {
+    pub url: String,
+    pub branch: String,
 }
 
 impl Repository {
@@ -49,18 +50,24 @@ impl Repository {
 }
 
 /// 结构体定义: 存储构建器信息
-#[derive(Debug)]
-struct Builder {
-    path: String,
-    name: String,
-    ports: Vec<String>,
-    repository: Repository,
-    build_message: String,
+#[derive(Debug, Deserialize)]
+pub struct Builder {
+    pub path: String,
+    pub name: String,
+    pub ports: Vec<String>,
+    pub repository: Repository,
+    pub build_message: String,
 }
 
 impl Builder {
     /// 创建一个新的构建器实例
-    fn new(path: String, name: String, ports: Vec<String>, url: String, branch: String) -> Self {
+    pub fn new(
+        path: String,
+        name: String,
+        ports: Vec<String>,
+        url: String,
+        branch: String,
+    ) -> Self {
         let repository = Repository::new(url, branch);
         let mut builder = Builder {
             path,
@@ -77,7 +84,10 @@ impl Builder {
     fn init_info(&self) {
         println!("初始化构建器！");
         println!("项目路径：{}，项目名：{}", self.path, self.name);
-        println!("项目地址：{}，项目分支：{}", self.repository.url, self.repository.branch);
+        println!(
+            "项目地址：{}，项目分支：{}",
+            self.repository.url, self.repository.branch
+        );
     }
 
     /// 克隆或拉取仓库
@@ -97,7 +107,7 @@ impl Builder {
     }
 
     /// 构建项目
-    fn build(&mut self) {
+    pub fn build(&mut self) {
         std::env::set_current_dir(&self.path).unwrap();
         let build_commands: HashMap<&str, fn() -> Result<String, Error>> = vec![
             ("pom.xml", maven_build as fn() -> Result<String, Error>),
@@ -107,7 +117,9 @@ impl Builder {
             ("go.mod", go_build),
             ("CMakeLists.txt", c_build),
             ("Cargo.toml", rust_build),
-        ].into_iter().collect();
+        ]
+        .into_iter()
+        .collect();
 
         let mut build_flag = 0;
 
@@ -124,8 +136,11 @@ impl Builder {
 
         if Path::new("Dockerfile").exists() {
             build_flag += 1;
-            let slice_of_ports=self.ports.iter().map(AsRef::as_ref).collect();
-            if let Err(err) = docker_utils::rebuild_container(&self.name, &slice_of_ports) {
+            // 先将 Vec<String> 转换为 Vec<&str>
+            let ports_vec: Vec<&str> = self.ports.iter().map(|s| s.as_str()).collect();
+            // 将 Vec<&str> 转换为切片 &[&str]
+            let ports_slice = Box::leak(ports_vec.into_boxed_slice());
+            if let Err(err) = docker_utils::rebuild_container(&self.name, ports_slice) {
                 println!("Docker构建失败: {}", err);
             } else {
                 println!("Docker构建成功");
@@ -158,13 +173,25 @@ fn gradle_build() -> Result<String, Error> {
 /// 执行 Python 构建
 fn python_build() -> Result<String, Error> {
     println!("构建Python项目");
-    command_utils::run_command("pip", &["install", "-r", "requirements.txt", "-i", "https://pypi.tuna.tsinghua.edu.cn/simple"])
+    command_utils::run_command(
+        "pip",
+        &[
+            "install",
+            "-r",
+            "requirements.txt",
+            "-i",
+            "https://pypi.tuna.tsinghua.edu.cn/simple",
+        ],
+    )
 }
 
 /// 执行 Node.js 构建
 fn node_build() -> Result<String, Error> {
     println!("构建Node项目");
-    command_utils::run_command("npm", &["install", "--registry=https://registry.npmmirror.com"])?;
+    command_utils::run_command(
+        "npm",
+        &["install", "--registry=https://registry.npmmirror.com"],
+    )?;
     command_utils::run_command("npm", &["run", "build"])?;
     let work_dir = std::env::current_dir().unwrap();
     let source = Path::new("/media/zmkj/work/node_file/Cesium.js");
@@ -190,9 +217,5 @@ fn c_build() -> Result<String, Error> {
 /// 执行 Rust 构建
 fn rust_build() -> Result<String, Error> {
     println!("构建Rust项目");
-    command_utils::run_command("cargo", &["build"])
+    command_utils::run_command("cargo", &["build","--release"])
 }
-
-
-
-
