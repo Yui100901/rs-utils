@@ -55,7 +55,7 @@ pub fn default_run(name: &str, ports: &[&str]) -> Result<String, Error> {
     ];
     let mut ports_mappings: Vec<String> = Vec::new();
     for p in ports {
-        ports_mappings.push(format!("{}:{}", p, p));
+        ports_mappings.push(format!("-p {}:{}", p, p));
     }
     args.append(&mut ports_mappings);
     args.push(format!("{}:latest", name));
