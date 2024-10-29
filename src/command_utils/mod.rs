@@ -4,7 +4,7 @@ use std::process::{Command, Stdio};
 use log::{error, info};
 
 pub fn run_command(name: &str, args: &[&str]) -> Result<String, io::Error> {
-    info!("Running command: {}{}", name, args.join(" "));
+    info!("Running command: {} {}", name, args.join(" "));
     let mut cmd = Command::new(name)
         .args(args)
         .stdout(Stdio::piped())

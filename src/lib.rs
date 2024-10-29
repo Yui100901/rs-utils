@@ -4,3 +4,5 @@ pub mod docker_utils;
 pub mod file_utils;
 
 pub mod git_utils;
+
+pub mod log_utils;

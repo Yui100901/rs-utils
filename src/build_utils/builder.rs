@@ -86,6 +86,7 @@ impl Builder {
 
     /// 克隆或拉取仓库
     pub fn clone_repository(&self, force_clone: bool) {
+        info!("克隆仓库{}", self.repository.url);
         if Path::new(&self.path).exists() {
             if force_clone {
                 info!("目录 {} 已存在，删除并重新克隆。", self.path);
@@ -96,6 +97,7 @@ impl Builder {
                 info!("目录 {} 已存在，跳过克隆。", self.path);
             }
         } else {
+            info!("克隆仓库 {}", self.path);
             self.repository.clone(&self.path);
         }
     }
