@@ -31,8 +31,8 @@ impl Repository {
     }
 
     /// 拉取最新的仓库更改
-    fn pull(&self)  {
-        match git_utils::pull(){
+    fn fetch(&self)  {
+        match git_utils::fetch(){
             Ok(s)=>info!("{}",s),
             Err(e)=>info!("{}",e),
         }
@@ -93,7 +93,7 @@ impl Builder {
                 fs::remove_dir_all(&self.path).unwrap();
                 self.repository.clone(&self.path);
             } else {
-                self.repository.pull();
+                self.repository.fetch();
                 info!("目录 {} 已存在，跳过克隆。", self.path);
             }
         } else {
