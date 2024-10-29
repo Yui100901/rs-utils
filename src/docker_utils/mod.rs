@@ -5,7 +5,7 @@ use std::process::Command;
 
 /// 停止docker容器
 pub fn stop_container(containers: &[&str]) -> Result<String, Error> {
-    info!("停止docker容器");
+    info!("停止容器 {}", containers);
     let mut args = vec!["stop"];
     args.extend_from_slice(containers);
     command_utils::run_command("docker", &args)
@@ -13,7 +13,7 @@ pub fn stop_container(containers: &[&str]) -> Result<String, Error> {
 
 /// 强制停止docker容器
 pub fn kill_container(containers: &[&str]) -> Result<String, Error> {
-    info!("强制停止docker容器");
+    info!("强制停止容器 {}", containers);
     let mut args = vec!["kill"];
     args.extend_from_slice(containers);
     command_utils::run_command("docker", &args)
@@ -21,7 +21,7 @@ pub fn kill_container(containers: &[&str]) -> Result<String, Error> {
 
 /// 删除docker容器
 pub fn remove_container(containers: &[&str]) -> Result<String, Error> {
-    info!("删除docker容器");
+    info!("删除容器 {}", containers);
     let mut args = vec!["rm"];
     args.extend_from_slice(containers);
     command_utils::run_command("docker", &args)
@@ -29,7 +29,7 @@ pub fn remove_container(containers: &[&str]) -> Result<String, Error> {
 
 /// 删除docker镜像
 pub fn remove_image(images: &[&str]) -> Result<String, Error> {
-    info!("删除docker镜像");
+    info!("删除镜像 {}", images);
     let mut args = vec!["rmi"];
     args.extend_from_slice(images);
     command_utils::run_command("docker", &args)
@@ -37,14 +37,14 @@ pub fn remove_image(images: &[&str]) -> Result<String, Error> {
 
 /// 构建Docker镜像
 pub fn build(name: &str) -> Result<String, Error> {
-    info!("构建Docker镜像");
+    info!("构建镜像 {}", name);
     let args = &["build", "-t", name, "."];
     command_utils::run_command("docker", args)
 }
 
 /// 默认启动Docker容器
 pub fn default_run(name: &str, ports: &[&str]) -> Result<String, Error> {
-    info!("默认启动");
+    info!("默认启动 {}", name);
     let mut args: Vec<String> = vec![
         "run".into(),
         "-d".into(),

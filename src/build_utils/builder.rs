@@ -115,6 +115,7 @@ impl Builder {
 
         for (file, build) in build_commands {
             if Path::new(file).exists() {
+                info!(format!("发现文件 {}，构建项目 {}", file, self.name));
                 build_flag += 1;
                 if let Err(err) = build() {
                     self.build_message = format!("{}项目构建出错:\n{}", self.name, err);
@@ -125,15 +126,16 @@ impl Builder {
         }
 
         if Path::new("Dockerfile").exists() {
+            info!(format!("构建项目 {} 的Docker容器镜像", self.name));
             build_flag += 1;
             // 先将 Vec<String> 转换为 Vec<&str>
             let ports_vec: Vec<&str> = self.ports.iter().map(|s| s.as_str()).collect();
             // 将 Vec<&str> 转换为切片 &[&str]
             let ports_slice = Box::leak(ports_vec.into_boxed_slice());
             if let Err(err) = docker_utils::rebuild_container(&self.name, ports_slice) {
-                println!("Docker构建失败: {}", err);
+                info!("Docker构建失败: {}", err);
             } else {
-                println!("Docker构建成功");
+                info!("Docker构建成功");
             }
         }
 
@@ -150,19 +152,19 @@ impl Builder {
 
 /// 执行 Maven 构建
 fn maven_build() -> Result<String, Error> {
-    println!("构建Maven项目");
+    info!("构建Maven项目");
     command_utils::run_command("mvn", &["clean", "package"])
 }
 
 /// 执行 Gradle 构建
 fn gradle_build() -> Result<String, Error> {
-    println!("构建Gradle项目");
+    info!("构建Gradle项目");
     command_utils::run_command("gradle", &["build"])
 }
 
 /// 执行 Python 构建
 fn python_build() -> Result<String, Error> {
-    println!("构建Python项目");
+    info!("构建Python项目");
     command_utils::run_command(
         "pip",
         &[
@@ -177,21 +179,32 @@ fn python_build() -> Result<String, Error> {
 
 /// 执行 Node.js 构建
 fn node_build() -> Result<String, Error> {
-    println!("构建Node项目");
+    info!("构建Node项目");
     command_utils::run_command(
         "npm",
         &["install", "--registry=https://registry.npmmirror.com"],
     )?;
     command_utils::run_command("npm", &["run", "build"])?;
     let work_dir = std::env::current_dir().unwrap();
-    let source = Path::new("/media/zmkj/work/node_file/Cesium.js");
+    let source = Path::new("/root/node_file/Cesium.js");
     let target = work_dir.join("dist/cesium/Cesium.js");
-    file_utils::replace(&source, &target)
+    if source.exists() && target.parent().map_or(false, |p| p.exists()) {
+        file_utils::replace(&source, &target).expect("替换文件失败");
+        println!("文件替换成功！");
+    } else {
+        if !source.exists() {
+            println!("源文件不存在：{}", source.display());
+        }
+        if !target.parent().map_or(false, |p| p.exists()) {
+            println!("目标目录不存在：{}", target.display());
+        }
+    }
+    Ok(String::from(""))
 }
 
 /// 执行 Go 构建
 fn go_build() -> Result<String, Error> {
-    println!("构建Go项目");
+    info!("构建Go项目");
     command_utils::run_command("go", &["env", "-w", "GO111MODULE=on"])?;
     command_utils::run_command("go", &["env", "-w", "GOPROXY=https://goproxy.cn,direct"])?;
     command_utils::run_command("go", &["build"])
@@ -199,13 +212,13 @@ fn go_build() -> Result<String, Error> {
 
 /// 执行 C 构建
 fn c_build() -> Result<String, Error> {
-    println!("构建C项目");
+    info!("构建C项目");
     command_utils::run_command("cmake", &[".."])?;
     command_utils::run_command("make", &[])
 }
 
 /// 执行 Rust 构建
 fn rust_build() -> Result<String, Error> {
-    println!("构建Rust项目");
+    info!("构建Rust项目");
     command_utils::run_command("cargo", &["build", "--release"])
 }
