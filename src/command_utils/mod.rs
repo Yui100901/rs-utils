@@ -20,7 +20,7 @@ pub fn run_command(name: &str, args: &[&str]) -> Result<String, io::Error> {
     let stdout_handle = thread::spawn(move || {
         let reader = io::BufReader::new(stdout);
         for line in reader.lines() {
-            println!("{}", line.expect("Failed to read line"));
+            info!("{}", line.expect("Failed to read line"));
         }
     });
 
