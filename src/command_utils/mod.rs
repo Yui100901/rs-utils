@@ -1,7 +1,7 @@
-use std::{io, thread};
+use log::{error, info};
 use std::io::BufRead;
 use std::process::{Command, Stdio};
-use log::{error, info};
+use std::{io, thread};
 
 pub fn run_command(name: &str, args: &[&str]) -> Result<String, io::Error> {
     info!("Running command: {} {}", name, args.join(" "));
@@ -36,7 +36,11 @@ pub fn run_command(name: &str, args: &[&str]) -> Result<String, io::Error> {
     cmd.wait().expect("Failed to wait on child");
 
     // 等待所有线程完成
-    stdout_handle.join().expect("The stdout thread has panicked");
-    stderr_handle.join().expect("The stderr thread has panicked");
+    stdout_handle
+        .join()
+        .expect("The stdout thread has panicked");
+    stderr_handle
+        .join()
+        .expect("The stderr thread has panicked");
     Ok(String::from("Success"))
 }

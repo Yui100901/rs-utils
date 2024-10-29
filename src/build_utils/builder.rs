@@ -1,14 +1,14 @@
+use crate::{command_utils, docker_utils, file_utils, git_utils};
+use log::info;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::io::Error;
 use std::path::Path;
 use std::process::Command;
-use log::info;
-use crate::{command_utils, docker_utils, file_utils, git_utils};
 
 /// 结构体定义: 存储仓库信息
-#[derive(Debug, Serialize,Deserialize,Default)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Repository {
     #[serde(default)]
     pub url: String,
@@ -24,23 +24,23 @@ impl Repository {
 
     /// 克隆仓库到指定路径
     pub fn clone(&self, path: &str) {
-        match git_utils::clone_latest(&self.url,&self.branch,path){
-            Ok(s)=>info!("{}",s),
-            Err(e)=>info!("{}",e),
+        match git_utils::clone_latest(&self.url, &self.branch, path) {
+            Ok(s) => info!("{}", s),
+            Err(e) => info!("{}", e),
         }
     }
 
     /// 拉取最新的仓库更改
-    fn fetch(&self)  {
-        match git_utils::fetch(){
-            Ok(s)=>info!("{}",s),
-            Err(e)=>info!("{}",e),
+    fn fetch(&self) {
+        match git_utils::fetch() {
+            Ok(s) => info!("{}", s),
+            Err(e) => info!("{}", e),
         }
     }
 }
 
 /// 结构体定义: 存储构建器信息
-#[derive(Debug, Serialize,Deserialize,Default)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Builder {
     #[serde(default)]
     pub path: String,
@@ -85,17 +85,11 @@ impl Builder {
     }
 
     /// 克隆或拉取仓库
-    pub fn clone_repository(&self, force_clone: bool) {
+    pub fn clone_repository(&self) {
         info!("克隆仓库{}", self.repository.url);
         if Path::new(&self.path).exists() {
-            if force_clone {
-                info!("目录 {} 已存在，删除并重新克隆。", self.path);
-                fs::remove_dir_all(&self.path).unwrap();
-                self.repository.clone(&self.path);
-            } else {
-                self.repository.fetch();
-                info!("目录 {} 已存在，跳过克隆。", self.path);
-            }
+            info!("目录 {} 已存在，跳过克隆。", self.path);
+            self.repository.fetch();
         } else {
             info!("克隆仓库 {}", self.path);
             self.repository.clone(&self.path);
@@ -213,5 +207,5 @@ fn c_build() -> Result<String, Error> {
 /// 执行 Rust 构建
 fn rust_build() -> Result<String, Error> {
     println!("构建Rust项目");
-    command_utils::run_command("cargo", &["build","--release"])
+    command_utils::run_command("cargo", &["build", "--release"])
 }

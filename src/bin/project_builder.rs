@@ -1,23 +1,19 @@
 use clap::Parser;
+use log::info;
 use rs_utils::build_utils::builder::Builder;
+use rs_utils::log_utils;
 use serde_yaml;
 use std::collections::HashMap;
 use std::io::Read;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::{fs, thread};
-use log::info;
 use toml::from_str;
-use rs_utils::log_utils;
 
 /// 命令行参数结构体
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    /// 强制克隆仓库
-    #[arg(short, long)]
-    force: bool,
-
     /// 是否并发构建
     #[arg(short, long)]
     concurrent: bool,
@@ -33,14 +29,12 @@ struct Args {
 fn main() {
     log_utils::init_logger();
     let args = Args::parse();
-    let force_clone = args.force;
     let concurrent_build = args.concurrent;
     let ports = args.ports.unwrap_or_else(|| "".to_string());
     let path = &args.path;
 
     let port_list: Vec<String> = ports.split(',').map(|s| s.to_string()).collect();
     info!("输入路径: {}", path);
-    info!("强制克隆仓库: {}", force_clone);
     info!("是否并发构建: {}", concurrent_build);
     info!("端口列表: {:?}", port_list);
 
@@ -50,7 +44,12 @@ fn main() {
     let metadata = fs::metadata(&abs_input_path).expect("无法访问输入路径");
 
     if metadata.is_dir() {
-        let name = abs_input_path.file_name().unwrap().to_str().unwrap().to_string();
+        let name = abs_input_path
+            .file_name()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string();
         let b = Builder::new(
             abs_input_path.to_str().unwrap().to_string(),
             name,
@@ -95,7 +94,7 @@ fn main() {
     {
         let mut builders = builder_list.lock().unwrap();
         builders.iter_mut().for_each(|builder| {
-            builder.clone_repository(force_clone);
+            builder.clone_repository();
         });
     }
 
