@@ -1,5 +1,5 @@
 use clap::Parser;
-use log::info;
+use log::{error, info};
 use rs_utils::build_utils::builder::Builder;
 use rs_utils::log_utils;
 use serde_yaml;
@@ -90,14 +90,6 @@ fn main() {
 
     let builder_list = Arc::new(Mutex::new(builder_list));
 
-    // 先克隆仓库，再进行构建
-    {
-        let mut builders = builder_list.lock().unwrap();
-        builders.iter_mut().for_each(|builder| {
-            builder.clone_repository();
-        });
-    }
-
     if concurrent_build {
         let mut handles = vec![];
 
@@ -106,6 +98,7 @@ fn main() {
             let handle = thread::spawn(move || {
                 let mut b = b_clone.lock().unwrap();
                 b.iter_mut().for_each(|builder| {
+                    builder.get_source_code();
                     builder.build();
                 });
             });
@@ -119,6 +112,7 @@ fn main() {
         info!("顺序构建");
         let mut builders = builder_list.lock().unwrap();
         builders.iter_mut().for_each(|builder| {
+            builder.get_source_code();
             builder.build();
         });
     }

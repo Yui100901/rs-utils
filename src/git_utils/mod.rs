@@ -31,6 +31,6 @@ pub fn pull() -> Result<String, io::Error> {
 }
 
 pub fn fetch() -> Result<String, io::Error> {
-    let args = &["fetch", "--force", "--progress"];
+    let args = &["fetch", "--force"];
     command_utils::run_command("git", args)
 }

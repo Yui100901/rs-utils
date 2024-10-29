@@ -1,5 +1,5 @@
 use crate::{command_utils, docker_utils, file_utils, git_utils};
-use log::info;
+use log::{error, info};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
@@ -31,7 +31,7 @@ impl Repository {
     }
 
     /// 拉取最新的仓库更改
-    fn fetch(&self) {
+    fn update(&self) {
         match git_utils::fetch() {
             Ok(s) => info!("{}", s),
             Err(e) => info!("{}", e),
@@ -85,14 +85,28 @@ impl Builder {
     }
 
     /// 克隆或拉取仓库
-    pub fn clone_repository(&self) {
-        info!("克隆仓库{}", self.repository.url);
-        if Path::new(&self.path).exists() {
-            info!("目录 {} 已存在，跳过克隆。", self.path);
-            self.repository.fetch();
+    pub fn get_source_code(&self) {
+        if !Path::new(&self.path).exists() {
+            //项目目录不存在
+            match fs::create_dir_all(&self.path) {
+                Ok(_) => info!("路径创建成功：{}", &self.path),
+                Err(e) => error!("创建路径失败：{}", e),
+            }
         } else {
-            info!("克隆仓库 {}", self.path);
-            self.repository.clone(&self.path);
+            //项目目录存在
+            if Path::new(&self.path).join("/.git").exists() {
+                //.git存在，获取最新代码
+                info!("目录 {} 已存在，跳过克隆。", self.path);
+                self.repository.update();
+            } else {
+                //.git不存在
+                if self.repository.url.is_empty() {
+                    //项目地址为空
+                    return;
+                }
+                info!("克隆仓库 {}", self.path);
+                self.repository.clone(&self.path);
+            }
         }
     }
 
@@ -115,7 +129,7 @@ impl Builder {
 
         for (file, build) in build_commands {
             if Path::new(file).exists() {
-                info!(format!("发现文件 {}，构建项目 {}", file, self.name));
+                info!("发现文件 {}，构建项目 {}", file, self.name);
                 build_flag += 1;
                 if let Err(err) = build() {
                     self.build_message = format!("{}项目构建出错:\n{}", self.name, err);
@@ -126,7 +140,7 @@ impl Builder {
         }
 
         if Path::new("Dockerfile").exists() {
-            info!(format!("构建项目 {} 的Docker容器镜像", self.name));
+            info!("构建项目 {} 的Docker容器镜像", self.name);
             build_flag += 1;
             // 先将 Vec<String> 转换为 Vec<&str>
             let ports_vec: Vec<&str> = self.ports.iter().map(|s| s.as_str()).collect();
