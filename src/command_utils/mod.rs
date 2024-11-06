@@ -1,4 +1,4 @@
-use log::{error, info};
+use log::{error, info, warn};
 use std::io::BufRead;
 use std::process::{Command, Stdio};
 use std::{io, thread};
@@ -19,28 +19,35 @@ pub fn run_command(name: &str, args: &[&str]) -> Result<String, io::Error> {
     // 创建线程来处理标准输出
     let stdout_handle = thread::spawn(move || {
         let reader = io::BufReader::new(stdout);
+        let mut output = String::new();
         for line in reader.lines() {
-            info!("{}", line.expect("Failed to read line"));
+            let line = line.expect("Failed to read line");
+            info!("{}", line);
+            output.push_str(&line);
+            output.push('\n');
         }
+        output
     });
 
     // 创建线程来处理标准错误
     let stderr_handle = thread::spawn(move || {
         let reader = io::BufReader::new(stderr);
+        let mut output = String::new();
         for line in reader.lines() {
-            error!("{}", line.expect("Failed to read line"));
+            let line = line.expect("Failed to read line");
+            warn!("{}", line);
+            output.push_str(&line);
+            output.push('\n');
         }
+        output
     });
 
     // 等待命令执行完毕
     cmd.wait().expect("Failed to wait on child");
 
-    // 等待所有线程完成
-    stdout_handle
-        .join()
-        .expect("The stdout thread has panicked");
-    stderr_handle
-        .join()
-        .expect("The stderr thread has panicked");
-    Ok(String::from("Success"))
+    // 获取标准输出和标准错误
+    let stdout = stdout_handle.join().expect("The stdout thread has panicked");
+    let stderr = stderr_handle.join().expect("The stderr thread has panicked");
+
+    Ok(stdout)
 }

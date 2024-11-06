@@ -92,21 +92,21 @@ impl Builder {
                 Ok(_) => info!("路径创建成功：{}", &self.path),
                 Err(e) => error!("创建路径失败：{}", e),
             }
+        }
+        //项目目录存在
+        if Path::new(&self.path).join(".git").exists() {
+            //.git存在，进入项目目录，并获取最新代码
+            info!("拉取最新代码");
+            std::env::set_current_dir(&self.path).unwrap();
+            self.repository.update();
         } else {
-            //项目目录存在
-            if Path::new(&self.path).join("/.git").exists() {
-                //.git存在，获取最新代码
-                info!("目录 {} 已存在，跳过克隆。", self.path);
-                self.repository.update();
-            } else {
-                //.git不存在
-                if self.repository.url.is_empty() {
-                    //项目地址为空
-                    return;
-                }
-                info!("克隆仓库 {}", self.path);
-                self.repository.clone(&self.path);
+            //.git不存在
+            if self.repository.url.is_empty() {
+                //项目地址为空
+                return;
             }
+            info!("克隆仓库 {}", self.path);
+            self.repository.clone(&self.path);
         }
     }
 
@@ -199,7 +199,7 @@ fn node_build() -> Result<String, Error> {
         &["install", "--registry=https://registry.npmmirror.com"],
     )?;
     command_utils::run_command("npm", &["run", "build"])?;
-    let work_dir = std::env::current_dir().unwrap();
+    let work_dir = std::env::current_dir()?;
     let source = Path::new("/root/node_file/Cesium.js");
     let target = work_dir.join("dist/cesium/Cesium.js");
     if source.exists() && target.parent().map_or(false, |p| p.exists()) {
