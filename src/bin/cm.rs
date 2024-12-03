@@ -50,7 +50,7 @@ fn main() {
 }
 
 fn build(path: &str,port_list:&[&str], export: bool) -> Result<String, Error>{
-    let file_data =file_utils::FileData::new(path.to_string()).unwrap();
+    let file_data =file_utils::file_data::FileData::new(path.to_string()).unwrap();
     docker_utils::rebuild_container(&file_data.filename, port_list)?;
     if export {
         docker_utils::save(&file_data.filename)?;

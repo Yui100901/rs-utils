@@ -39,7 +39,7 @@ fn main() {
     info!("是否并发构建: {}", concurrent_build);
     info!("端口列表: {:?}", port_list);
 
-    let file_data=file_utils::FileData::new(path.clone()).unwrap();
+    let file_data=file_utils::file_data::FileData::new(path.clone()).unwrap();
 
 
     let mut builder_list: Vec<Builder> = Vec::new();
