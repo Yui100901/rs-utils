@@ -9,6 +9,7 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::{fs, thread};
 use toml::from_str;
+use rs_utils::file_utils;
 
 /// 命令行参数结构体
 #[derive(Parser, Debug)]
@@ -19,7 +20,7 @@ struct Args {
     concurrent: bool,
 
     /// 端口列表
-    #[arg(long)]
+    #[arg(short, long)]
     ports: Option<String>,
 
     /// 输入的文件或目录路径
@@ -31,28 +32,22 @@ fn main() {
     let args = Args::parse();
     let concurrent_build = args.concurrent;
     let ports = args.ports.unwrap_or_else(|| "".to_string());
-    let path = &args.path;
+    let path = args.path;
 
     let port_list: Vec<String> = ports.split(',').map(|s| s.to_string()).collect();
-    info!("输入路径: {}", path);
+    info!("输入路径: {}", &path);
     info!("是否并发构建: {}", concurrent_build);
     info!("端口列表: {:?}", port_list);
 
-    let abs_input_path = fs::canonicalize(Path::new(path)).expect("无法访问输入路径");
+    let file_data=file_utils::FileData::new(path.clone()).unwrap();
+
 
     let mut builder_list: Vec<Builder> = Vec::new();
-    let metadata = fs::metadata(&abs_input_path).expect("无法访问输入路径");
 
-    if metadata.is_dir() {
-        let name = abs_input_path
-            .file_name()
-            .unwrap()
-            .to_str()
-            .unwrap()
-            .to_string();
+    if file_data.metadata.is_dir() {
         let b = Builder::new(
-            abs_input_path.to_str().unwrap().to_string(),
-            name,
+            file_data.abs_path,
+            file_data.filename,
             port_list,
             "".to_string(),
             "".to_string(),
@@ -67,7 +62,7 @@ fn main() {
             fs::create_dir_all(&work_dir).expect("创建 projects 文件夹出错");
         }
 
-        let mut file = fs::File::open(&abs_input_path).expect("打开文件出错");
+        let mut file = fs::File::open(&file_data.abs_path).expect("打开文件出错");
         let mut data = String::new();
         file.read_to_string(&mut data).expect("读取文件出错");
 

@@ -42,6 +42,14 @@ pub fn build(name: &str) -> Result<String, Error> {
     command_utils::run_command("docker", args)
 }
 
+/// 导出Docker镜像
+pub fn save(name: &str) -> Result<String, Error> {
+    info!("构建镜像 {}", name);
+    let filename=name.replace(':', "_").replace('/', "_");
+    let args = &["save", "-o", &filename, name];
+    command_utils::run_command("docker", args)
+}
+
 /// 默认启动Docker容器
 pub fn default_run(name: &str, ports: &[&str]) -> Result<String, Error> {
     info!("默认启动 {:?}", name);
