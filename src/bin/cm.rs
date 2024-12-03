@@ -1,5 +1,7 @@
 use std::io::{BufRead, Error};
+use std::path::Path;
 use clap::{Parser, Subcommand};
+use log::{error, info};
 use rs_utils::{docker_utils, file_utils};
 
 #[derive(Parser)]
@@ -29,9 +31,13 @@ enum Commands {
 fn main() {
     let cli = Cli::parse();
 
+
     if let Some(cmd) = cli.command {
         match cmd {
             Commands::Build {export,ports,path} => {
+                if !Path::new(&path).join("Dockerfile").exists() {
+                    error!("Dockerfile does not exist");
+                }
                 let port_list: Vec<String> = ports
                     .unwrap_or_else(|| "".to_string())
                     .split(',')
