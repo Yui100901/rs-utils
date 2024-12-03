@@ -45,7 +45,7 @@ pub fn build(name: &str) -> Result<String, Error> {
 /// 导出Docker镜像
 pub fn save(name: &str) -> Result<String, Error> {
     info!("构建镜像 {}", name);
-    let filename=name.replace(':', "_").replace('/', "_");
+    let filename = format!("{}.tar", name.replace(':', "_").replace('/', "_"));
     let args = &["save", "-o", &filename, name];
     command_utils::run_command("docker", args)
 }
