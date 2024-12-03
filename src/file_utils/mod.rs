@@ -1,3 +1,4 @@
+use std::error::Error;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -46,4 +47,22 @@ pub fn replace(source: &Path, target: &Path) -> Result<String, io::Error> {
         Ok(_) => Ok(String::from("文件替换成功！")),
         Err(e) => Err(e),
     }
+}
+
+/// 获取目录的文件名
+pub fn dir_filename(path: &str) -> Result<String, Box<dyn Error>> {
+    let abs_path = fs::canonicalize(Path::new(path))?;
+    let file_name = abs_path
+        .file_name()
+        .ok_or("无法获取文件名")?
+        .to_str()
+        .ok_or("文件名包含无效 UTF-8")?
+        .to_string();
+
+    Ok(file_name)
+}
+
+pub fn get_absolute_path(path: &str) -> Result<String, Box<dyn Error>> {
+    let abs_path = fs::canonicalize(Path::new(path))?;
+    Ok(abs_path.to_str().ok_or("无法转换为字符串")?.to_string())
 }
