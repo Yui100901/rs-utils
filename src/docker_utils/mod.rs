@@ -78,5 +78,6 @@ pub fn rebuild_container(name: &str, ports: &[&str]) -> Result<String, Error> {
     remove_container(&[name])?;
     remove_image(&[name])?;
     build(name)?;
+    save(name)?;
     default_run(name, ports)
 }
