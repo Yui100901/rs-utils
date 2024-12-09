@@ -27,6 +27,13 @@ pub fn remove_container(containers: &[&str]) -> Result<String, Error> {
     command_utils::run_command("docker", &args)
 }
 
+/// 获取docker镜像列表
+pub fn list_images_formatted() -> Result<String, Error> {
+    info!("列出格式化的镜像列表");
+    let args = vec!["images", "--format", "{{.Repository}}:{{.Tag}}"];
+    command_utils::run_command("docker", &args)
+}
+
 /// 删除docker镜像
 pub fn remove_image(images: &[&str]) -> Result<String, Error> {
     info!("删除镜像 {:?}", images);
@@ -38,30 +45,30 @@ pub fn remove_image(images: &[&str]) -> Result<String, Error> {
 /// 构建Docker镜像
 pub fn build(name: &str) -> Result<String, Error> {
     info!("构建镜像 {}", name);
-    let args = &["build", "-t", name, "."];
-    command_utils::run_command("docker", args)
+    let args =  vec!["build", "-t", name, "."];
+    command_utils::run_command("docker", &args)
 }
 
 /// 导出Docker镜像
-pub fn save(name: &str) -> Result<String, Error> {
+pub fn save(name: &str,path:&str) -> Result<String, Error> {
     info!("导出镜像 {}", name);
-    let filename = format!("{}.tar", name.replace(':', "_").replace('/', "_"));
-    let args = &["save", "-o", &filename, name];
-    command_utils::run_command("docker", args)
+    let filename = format!("{}/{}.tar", path,name.replace(':', "_").replace('/', "_"));
+    let args =vec!["save", "-o", &filename, name];
+    command_utils::run_command("docker", &args)
 }
 
 /// 导入Docker镜像
 pub fn load(path: &str) -> Result<String, Error> {
     info!("导入镜像 {}", path);
-    let args = &["load", "-i", path];
-    command_utils::run_command("docker", args)
+    let args = vec!["load", "-i", path];
+    command_utils::run_command("docker", &args)
 }
 
 /// 清理docker镜像
 pub fn prune() -> Result<String, Error> {
     info!("清理镜像");
-    let args = &["image", "prune", "-f"];
-    command_utils::run_command("docker", args)
+    let args = vec!["image", "prune", "-f"];
+    command_utils::run_command("docker", &args)
 }
 
 /// 默认启动Docker容器

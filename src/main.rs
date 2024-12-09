@@ -83,6 +83,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         end_point: [f64; 2],
         obstacle_params: Vec<Obstacle>,
     }
-    command_utils::run_command("dir", &["/s"]);
+    match command_utils::run_command("cmd", &["/c","dir"]){
+        Ok(output) => info!("run_command Output:\n{}", output),
+        Err(e) => error!("Error:\n{}", e),
+    }
     Ok(())
 }

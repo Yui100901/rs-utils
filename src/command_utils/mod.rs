@@ -3,6 +3,34 @@ use std::io::BufRead;
 use std::process::{Command, Stdio};
 use std::{io, thread};
 
+/// 处理输出流的通用函数
+fn handle_output<T: BufRead>(reader: T, log:&str) -> String {
+    let mut output = String::new();
+    for line in reader.split(b'\n') {
+        match line {
+            Ok(bytes) => {
+                let line = String::from_utf8_lossy(&bytes);
+                match log {
+                    "info" => {
+                        info!("{}", line);
+                    },
+                    "warn" => {
+                        warn!("{}", line);
+                    }
+                    "error" => {
+                        error!("{}", line);
+                    }
+                    _ => {}
+                }
+                output.push_str(&line);
+                output.push('\n');
+            }
+            Err(e) => error!("Failed to read line: {}", e),
+        }
+    }
+    output
+}
+
 pub fn run_command(name: &str, args: &[&str]) -> Result<String, io::Error> {
     info!("Running command: {} {}", name, args.join(" "));
     let mut cmd = Command::new(name)
@@ -19,27 +47,13 @@ pub fn run_command(name: &str, args: &[&str]) -> Result<String, io::Error> {
     // 创建线程来处理标准输出
     let stdout_handle = thread::spawn(move || {
         let reader = io::BufReader::new(stdout);
-        let mut output = String::new();
-        for line in reader.lines() {
-            let line = line.expect("Failed to read line");
-            info!("{}", line);
-            output.push_str(&line);
-            output.push('\n');
-        }
-        output
+        handle_output(reader, "info")
     });
 
     // 创建线程来处理标准错误
     let stderr_handle = thread::spawn(move || {
         let reader = io::BufReader::new(stderr);
-        let mut output = String::new();
-        for line in reader.lines() {
-            let line = line.expect("Failed to read line");
-            warn!("{}", line);
-            output.push_str(&line);
-            output.push('\n');
-        }
-        output
+        handle_output(reader, "warn")
     });
 
     // 等待命令执行完毕
@@ -51,3 +65,4 @@ pub fn run_command(name: &str, args: &[&str]) -> Result<String, io::Error> {
 
     Ok(stdout)
 }
+

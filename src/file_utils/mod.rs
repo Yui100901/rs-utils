@@ -4,6 +4,7 @@ use std::error::Error;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
+use crate::file_utils::file_data::FileData;
 
 /// 遍历给定目录并返回文件路径列表
 /// `recursive` 参数表明是否递归遍历子目录
@@ -49,4 +50,13 @@ pub fn replace(source: &Path, target: &Path) -> Result<String, io::Error> {
         Ok(_) => Ok(String::from("文件替换成功！")),
         Err(e) => Err(e),
     }
+}
+
+/// 创建文件夹
+fn create_directory(path:&str) -> Result<FileData, Box<dyn Error>> {
+    let images_dir = Path::new(path);
+    if !images_dir.exists() {
+        fs::create_dir(images_dir)?;
+    }
+    FileData::new(String::from(path))
 }
