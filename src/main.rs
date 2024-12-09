@@ -24,12 +24,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Ok((files, dirs)) => {
             info!("Files:");
             for file in files {
-                info!("{}", file.display());
+                info!("{}", file.path_buf.display());
             }
 
             info!("Directories:");
             for dir in dirs {
-                info!("{}", dir.display());
+                info!("{}", dir.path_buf.display());
             }
         }
         Err(e) => error!("Error:\n{}", e),

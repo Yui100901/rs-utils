@@ -8,9 +8,9 @@ use crate::file_utils::file_data::FileData;
 
 /// 遍历给定目录并返回文件路径列表
 /// `recursive` 参数表明是否递归遍历子目录
-pub fn traverse_dir_files(dir: &str, recursive: bool) -> io::Result<(Vec<PathBuf>, Vec<PathBuf>)> {
+pub fn traverse_dir_files(dir: &str, recursive: bool) -> io::Result<(Vec<FileData>, Vec<FileData>)> {
     let mut files = Vec::new();
-    let mut dirs = Vec::new();
+    let mut dirs:Vec<FileData> = Vec::new();
 
     let dir_path = Path::new(dir).canonicalize()?;
 
@@ -20,12 +20,12 @@ pub fn traverse_dir_files(dir: &str, recursive: bool) -> io::Result<(Vec<PathBuf
             let entry = entry?;
             let path = entry.path().canonicalize()?;
             if path.is_dir() {
-                dirs.push(path.clone());
+                dirs.push(FileData::new(path.to_str().unwrap().to_string()).unwrap());
                 let (sub_dirs, sub_files) = traverse_dir_files(path.to_str().unwrap(), true)?;
                 dirs.extend(sub_dirs);
                 files.extend(sub_files);
             } else {
-                files.push(path);
+                files.push(FileData::new(path.to_str().unwrap().to_string()).unwrap());
             }
         }
     } else {
@@ -34,9 +34,9 @@ pub fn traverse_dir_files(dir: &str, recursive: bool) -> io::Result<(Vec<PathBuf
             let entry = entry?;
             let path = entry.path().canonicalize()?;
             if path.is_dir() {
-                dirs.push(path);
+                dirs.push(FileData::new(path.to_str().unwrap().to_string()).unwrap());
             } else {
-                files.push(path);
+                files.push(FileData::new(path.to_str().unwrap().to_string()).unwrap());
             }
         }
     }
