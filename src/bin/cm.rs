@@ -2,7 +2,7 @@ use std::io::{BufRead, Error};
 use std::path::Path;
 use clap::{Parser, Subcommand};
 use log::{error, info};
-use rs_utils::{docker_utils, file_utils};
+use rs_utils::{docker_utils, file_utils, log_utils};
 
 #[derive(Parser,Debug)]
 #[command(version, author, about, long_about = None)]
@@ -25,8 +25,8 @@ enum Commands {
 }
 
 fn main() {
+    log_utils::init_logger();
     let cli = Cli::parse();
-
     if let Some(cmd) = cli.command {
         match cmd {
             Commands::Build {export,path} => {
