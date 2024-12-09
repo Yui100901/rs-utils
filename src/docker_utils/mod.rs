@@ -44,9 +44,23 @@ pub fn build(name: &str) -> Result<String, Error> {
 
 /// 导出Docker镜像
 pub fn save(name: &str) -> Result<String, Error> {
-    info!("构建镜像 {}", name);
+    info!("导出镜像 {}", name);
     let filename = format!("{}.tar", name.replace(':', "_").replace('/', "_"));
     let args = &["save", "-o", &filename, name];
+    command_utils::run_command("docker", args)
+}
+
+/// 导入Docker镜像
+pub fn load(path: &str) -> Result<String, Error> {
+    info!("导入镜像 {}", path);
+    let args = &["load", "-i", path];
+    command_utils::run_command("docker", args)
+}
+
+/// 清理docker镜像
+pub fn prune() -> Result<String, Error> {
+    info!("清理镜像");
+    let args = &["image", "prune", "-f"];
     command_utils::run_command("docker", args)
 }
 
@@ -72,12 +86,10 @@ pub fn default_run(name: &str, ports: &[&str]) -> Result<String, Error> {
     command_utils::run_command("docker", &args_ref)
 }
 
-/// 重新构建Docker容器
-pub fn rebuild_container(name: &str, ports: &[&str]) -> Result<String, Error> {
+/// 重新创建Docker容器
+pub fn recreate_container(name: &str, ports: &[&str]) -> Result<String, Error> {
     stop_container(&[name])?;
     remove_container(&[name])?;
-    remove_image(&[name])?;
-    build(name)?;
-    save(name)?;
     default_run(name, ports)
 }
+

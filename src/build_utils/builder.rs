@@ -146,11 +146,14 @@ impl Builder {
             let ports_vec: Vec<&str> = self.ports.iter().map(|s| s.as_str()).collect();
             // 将 Vec<&str> 转换为切片 &[&str]
             let ports_slice = Box::leak(ports_vec.into_boxed_slice());
-            if let Err(err) = docker_utils::rebuild_container(&self.name, ports_slice) {
+            docker_utils::build(&self.name).expect("构建镜像失败");
+            if let Err(err) = docker_utils::recreate_container(&self.name, ports_slice) {
                 info!("Docker构建失败: {}", err);
             } else {
                 info!("Docker构建成功");
             }
+            docker_utils::save(&self.name).expect("保存镜像失败");
+            docker_utils::default_run(&self.name, ports_slice).expect("Docker 启动镜像失败!");
         }
 
         let output_info = if build_flag == 0 {
