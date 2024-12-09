@@ -166,9 +166,13 @@ fn reverse(name:&str) -> Result<String, Error> {
         Ok(data) => {
             let container_info: Vec<ContainerInfo> = serde_json::from_str(data.as_str())?;
             let container_info= container_info.into_iter().next().unwrap();
-            let mut command:Vec<String> = vec!["docker".to_string(),"run".to_string(),"-d".to_string()];
-            // 添加镜像名称
-            command.push(container_info.Config.Image.clone());
+            let mut command:Vec<String> = vec![
+                "docker".to_string(),
+                "run".to_string(),
+                "-d".to_string(),
+                "--name".to_string(),
+                name.to_string(),
+            ];
             // 添加环境变量
             if let Some(env_vars) = &container_info.Config.Env {
                 for env in env_vars {
@@ -185,6 +189,8 @@ fn reverse(name:&str) -> Result<String, Error> {
                     command.push(format!("-p {}:{}", binding.HostPort, port));
                 }
             }
+            // 添加镜像名称
+            command.push(container_info.Config.Image.clone());
             // 添加其他配置信息
             if let Some(cmd) = &container_info.Config.Cmd {
                 let cmd_str = cmd.join(" ");
