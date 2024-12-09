@@ -1,7 +1,10 @@
+use std::collections::HashMap;
 use std::io::{BufRead, Error};
 use std::path::Path;
+use std::process::Command;
 use clap::{Parser, Subcommand};
 use log::{error, info};
+use serde::Deserialize;
 use rs_utils::{docker_utils, file_utils, log_utils};
 
 #[derive(Parser,Debug)]
@@ -30,6 +33,9 @@ enum Commands {
     Export {
         path: Option<String>,
     },
+    Reverse{
+        name:String,
+    }
 }
 
 fn main() {
@@ -66,6 +72,9 @@ fn main() {
                     export("images").expect("Export failed!");
                 }
             }
+            Commands::Reverse {name } => {
+                reverse(&name).expect("Failed to reverse containers!");
+            }
         }
     }
 }
@@ -81,7 +90,7 @@ fn build(path: &str,export: bool) -> Result<String, Error>{
 }
 
 fn clean()-> Result<String, Error> {
-    docker_utils::prune()
+    docker_utils::image_prune()
 }
 
 fn import(path: &str) -> Result<String, Error> {
@@ -106,8 +115,8 @@ fn import(path: &str) -> Result<String, Error> {
 }
 
 fn export(path: &str) -> Result<String, Error> {
-    docker_utils::prune()?;
-    let images=docker_utils::list_images_formatted()?;
+    docker_utils::image_prune()?;
+    let images=docker_utils::image_list_formatted()?;
     let images: Vec<&str> = images.lines().filter(|line| !line.is_empty()).collect();
     for image in images{
         if let Err(e) = docker_utils::save(image, path) {
@@ -115,4 +124,73 @@ fn export(path: &str) -> Result<String, Error> {
         }
     }
     Ok("Export success!".to_string())
+}
+
+
+
+#[derive(Deserialize, Debug)]
+struct Mount {
+    Source: String,
+    Destination: String,
+}
+
+#[derive(Deserialize, Debug)]
+struct PortBinding {
+    HostPort: String,
+}
+
+#[derive(Deserialize, Debug)]
+struct HostConfig {
+    PortBindings: HashMap<String, Vec<PortBinding>>,
+}
+
+#[derive(Deserialize, Debug)]
+struct Config {
+    Env: Option<Vec<String>>,
+    Cmd: Option<Vec<String>>,
+    Image: String,
+}
+
+#[derive(Deserialize, Debug)]
+struct ContainerInfo {
+    Config: Config,
+    HostConfig: HostConfig,
+    Mounts: Vec<Mount>,
+}
+
+fn reverse(name:&str) -> Result<String, Error> {
+    match docker_utils::container_inspect(name){
+        Ok(data) => {
+            let container_info: ContainerInfo = serde_json::from_str(data.as_str())?;
+            let mut command:Vec<String> = vec!["docker".to_string(),"run".to_string(),"-d".to_string()];
+            // 添加镜像名称
+            command.push(container_info.Config.Image.clone());
+            // 添加环境变量
+            if let Some(env_vars) = &container_info.Config.Env {
+                for env in env_vars {
+                    command.push(format!("-e {}", env));
+                }
+            }
+            // 添加挂载卷
+            for mount in &container_info.Mounts {
+                command.push(format!("-v {}:{}", mount.Source, mount.Destination));
+            }
+            // 添加端口映射
+            for (port, bindings) in &container_info.HostConfig.PortBindings {
+                for binding in bindings {
+                    command.push(format!("-p {}:{}", binding.HostPort, port));
+                }
+            }
+            // 添加其他配置信息
+            if let Some(cmd) = &container_info.Config.Cmd {
+                let cmd_str = cmd.join(" ");
+                command.push(format!("-- {}", cmd_str));
+            }
+            Ok(command.join(" "))
+        }
+        Err(e) => {
+            error!("Failed to inspect container {}: {}", name, e);
+            Err(e)
+        }
+    }
 }

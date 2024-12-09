@@ -4,7 +4,7 @@ use std::io::Error;
 use std::process::Command;
 
 /// 停止docker容器
-pub fn stop_container(containers: &[&str]) -> Result<String, Error> {
+pub fn container_stop(containers: &[&str]) -> Result<String, Error> {
     info!("停止容器 {:?}", containers);
     let mut args = vec!["stop"];
     args.extend_from_slice(containers);
@@ -12,7 +12,7 @@ pub fn stop_container(containers: &[&str]) -> Result<String, Error> {
 }
 
 /// 强制停止docker容器
-pub fn kill_container(containers: &[&str]) -> Result<String, Error> {
+pub fn container_kill(containers: &[&str]) -> Result<String, Error> {
     info!("强制停止容器 {:?}", containers);
     let mut args = vec!["kill"];
     args.extend_from_slice(containers);
@@ -20,22 +20,30 @@ pub fn kill_container(containers: &[&str]) -> Result<String, Error> {
 }
 
 /// 删除docker容器
-pub fn remove_container(containers: &[&str]) -> Result<String, Error> {
+pub fn container_remove(containers: &[&str]) -> Result<String, Error> {
     info!("删除容器 {:?}", containers);
     let mut args = vec!["rm"];
     args.extend_from_slice(containers);
     command_utils::run_command("docker", &args)
 }
 
+/// 获取容器详细信息
+pub fn container_inspect(name: &str) -> Result<String, Error> {
+    info!("获取容器 {}详细信息", name);
+    let mut args = vec!["inspect"];
+    args.push(name);
+    command_utils::run_command("docker", &args)
+}
+
 /// 获取docker镜像列表
-pub fn list_images_formatted() -> Result<String, Error> {
+pub fn image_list_formatted() -> Result<String, Error> {
     info!("列出格式化的镜像列表");
     let args = vec!["images", "--format", "{{.Repository}}:{{.Tag}}"];
     command_utils::run_command("docker", &args)
 }
 
 /// 删除docker镜像
-pub fn remove_image(images: &[&str]) -> Result<String, Error> {
+pub fn image_remove(images: &[&str]) -> Result<String, Error> {
     info!("删除镜像 {:?}", images);
     let mut args = vec!["rmi"];
     args.extend_from_slice(images);
@@ -65,14 +73,14 @@ pub fn load(path: &str) -> Result<String, Error> {
 }
 
 /// 清理docker镜像
-pub fn prune() -> Result<String, Error> {
+pub fn image_prune() -> Result<String, Error> {
     info!("清理镜像");
     let args = vec!["image", "prune", "-f"];
     command_utils::run_command("docker", &args)
 }
 
 /// 默认启动Docker容器
-pub fn default_run(name: &str, ports: &[&str]) -> Result<String, Error> {
+pub fn default_create(name: &str, ports: &[&str]) -> Result<String, Error> {
     info!("默认启动 {:?}", name);
     let mut args: Vec<String> = vec![
         "run".into(),
@@ -94,9 +102,9 @@ pub fn default_run(name: &str, ports: &[&str]) -> Result<String, Error> {
 }
 
 /// 重新创建Docker容器
-pub fn recreate_container(name: &str, ports: &[&str]) -> Result<String, Error> {
-    stop_container(&[name])?;
-    remove_container(&[name])?;
-    default_run(name, ports)
+pub fn container_recreate(name: &str, ports: &[&str]) -> Result<String, Error> {
+    container_stop(&[name])?;
+    container_remove(&[name])?;
+    default_create(name, ports)
 }
 
