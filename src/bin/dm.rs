@@ -73,7 +73,10 @@ fn main() {
                 }
             }
             Commands::Reverse {name } => {
-                reverse(&name).expect("Failed to reverse containers!");
+                match reverse(&name) {
+                    Ok(cmd) => {info!("{}",cmd.as_str())}
+                    Err(e) => {error!("Error to reverse container:{}",e)}
+                }
             }
         }
     }
