@@ -4,14 +4,14 @@ use clap::{Parser, Subcommand};
 use log::{error, info};
 use rs_utils::{docker_utils, file_utils};
 
-#[derive(Parser)]
+#[derive(Parser,Debug)]
 #[command(version, author, about, long_about = None)]
 struct Cli {
     #[command(subcommand)]
     command: Option<Commands>,
 }
 
-#[derive(Subcommand)]
+#[derive(Subcommand,Debug)]
 enum Commands {
     Build {
         #[arg(short, long)]
