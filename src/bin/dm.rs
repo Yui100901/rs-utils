@@ -46,6 +46,7 @@ fn main() {
 
             }
             Commands::Export {} => {
+                file_utils::create_directory("images").expect("Create directory failed!");
                 export("images").expect("Export failed!");
             }
         }
