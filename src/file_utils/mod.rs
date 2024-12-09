@@ -4,6 +4,7 @@ use std::error::Error;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
+use log::{error, info};
 use crate::file_utils::file_data::FileData;
 
 /// 遍历给定目录并返回文件路径列表
@@ -12,35 +13,48 @@ pub fn traverse_dir_files(dir: &str, recursive: bool) -> io::Result<(Vec<FileDat
     let mut files = Vec::new();
     let mut dirs:Vec<FileData> = Vec::new();
 
-    let dir_path = Path::new(dir).canonicalize()?;
+    let dir_file_data;
 
-    if recursive {
-        // 递归遍历目录
-        for entry in fs::read_dir(&dir_path)? {
-            let entry = entry?;
-            let path = entry.path().canonicalize()?;
-            if path.is_dir() {
-                dirs.push(FileData::new(path.to_str().unwrap().to_string()).unwrap());
-                let (sub_dirs, sub_files) = traverse_dir_files(path.to_str().unwrap(), true)?;
-                dirs.extend(sub_dirs);
-                files.extend(sub_files);
-            } else {
-                files.push(FileData::new(path.to_str().unwrap().to_string()).unwrap());
-            }
-        }
-    } else {
-        // 非递归遍历目录
-        for entry in fs::read_dir(&dir_path)? {
-            let entry = entry?;
-            let path = entry.path().canonicalize()?;
-            if path.is_dir() {
-                dirs.push(FileData::new(path.to_str().unwrap().to_string()).unwrap());
-            } else {
-                files.push(FileData::new(path.to_str().unwrap().to_string()).unwrap());
-            }
+    match FileData::new(dir.to_string()){
+        Ok(d) => {dir_file_data=d}
+        Err(e) => {
+            error!("Failed to open file:{}",e);
+            return Err(io::Error::new(io::ErrorKind::Other, "Failed to open directory"));
         }
     }
 
+    //遍历目录
+    for entry in fs::read_dir(&dir_file_data.path_buf)? {
+        let entry = entry?;
+        let path = match entry.path().canonicalize() {
+            Ok(p) => p,
+            Err(_)=>continue,
+        };
+        if let Some(path_str) = path.to_str() {
+            match FileData::new(path_str.to_string()) {
+                Ok(data)=>{
+                    if data.path_buf.is_dir(){
+                        dirs.push(data);
+                        if recursive {
+                            match traverse_dir_files(path.to_str().unwrap(), true) {
+                                Ok((sub_dirs, sub_files)) => {
+                                    dirs.extend(sub_dirs);
+                                    files.extend(sub_files);
+                                }
+                                Err(e) => {
+                                    error!("Failed to traverse subdirectory: {}", e);
+                                    continue
+                                }
+                            }
+                        }
+                    }else {
+                        files.push(data);
+                    }
+                }
+                Err(e)=>{error!("Failed to get file data:{}", e);}
+            }
+        }
+    }
     Ok((dirs, files))
 }
 

@@ -39,7 +39,8 @@ fn main() {
         match cmd {
             Commands::Build {export,path} => {
                 if !Path::new(&path).join("Dockerfile").exists() {
-                    error!("Dockerfile does not exist");
+                    error!("Dockerfile does not exists!");
+                    return;
                 }
                 build(&path, export).expect("构建失败");
             },
@@ -59,10 +60,11 @@ fn main() {
             Commands::Export {path} => {
                 if let Some(path) = path {
                     file_utils::create_directory(&path).expect("Create directory failed!");
+                    export(&path).expect("Export failed!");
                 }else {
                     file_utils::create_directory("images").expect("Create directory failed!");
+                    export("images").expect("Export failed!");
                 }
-                export("images").expect("Export failed!");
             }
         }
     }
@@ -70,6 +72,7 @@ fn main() {
 
 fn build(path: &str,export: bool) -> Result<String, Error>{
     let file_data =file_utils::file_data::FileData::new(path.to_string()).unwrap();
+    std::env::set_current_dir(&file_data.abs_path)?;
     docker_utils::build(&file_data.filename)?;
     if export {
         docker_utils::save(&file_data.filename,".")?;
@@ -84,19 +87,19 @@ fn clean()-> Result<String, Error> {
 fn import(path: &str) -> Result<String, Error> {
     match file_utils::file_data::FileData::new(path.to_string()){
         Ok(data) => {
-            match file_utils::traverse_dir_files(data.path.as_str(),true){
+            match file_utils::traverse_dir_files(data.abs_path.as_str(),true){
                 Ok((_,files)) => {
                     for file in files{
                         docker_utils::load(file.path.as_str())?;
                     }
                 },
                 Err(e)=>{
-                    error!("Import {} failed!Error:{}", path,e);
+                    error!("Traverse {} failed!Error:{}", path,e);
                 }
             }
         },
         Err(e)=>{
-            error!("Import {} failed!Error:{}", path,e);
+            error!("Get path {} failed!Error:{}", path,e);
         }
     }
     Ok("".to_string())
