@@ -164,7 +164,8 @@ struct ContainerInfo {
 fn reverse(name:&str) -> Result<String, Error> {
     match docker_utils::container_inspect(name){
         Ok(data) => {
-            let container_info: ContainerInfo = serde_json::from_str(data.as_str())?;
+            let container_info: Vec<ContainerInfo> = serde_json::from_str(data.as_str())?;
+            let container_info= container_info.into_iter().next().unwrap();
             let mut command:Vec<String> = vec!["docker".to_string(),"run".to_string(),"-d".to_string()];
             // 添加镜像名称
             command.push(container_info.Config.Image.clone());
