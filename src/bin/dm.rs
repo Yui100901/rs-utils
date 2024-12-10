@@ -177,7 +177,9 @@ fn reverse(name:&str) -> Result<String, Error> {
             ];
             //添加用户
             if let Some(user) = &container_info.Config.User {
-                command.push(format!("-u {}", user));
+                if !user.is_empty() {
+                    command.push(format!("-u {}", user));
+                }
             }
             // 添加环境变量
             if let Some(env_vars) = &container_info.Config.Env {
