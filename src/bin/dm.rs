@@ -74,7 +74,7 @@ fn main() {
             }
             Commands::Reverse {name } => {
                 match reverse(&name) {
-                    Ok(cmd) => {info!("{}",cmd.as_str())}
+                    Ok(cmd) => {info!("Generated docker command:\n{}",cmd.as_str())}
                     Err(e) => {error!("Error to reverse container:{}",e)}
                 }
             }
@@ -135,6 +135,7 @@ fn export(path: &str) -> Result<String, Error> {
 struct Mount {
     Source: String,
     Destination: String,
+    Mode: String,
 }
 
 #[derive(Deserialize, Debug)]
@@ -181,7 +182,7 @@ fn reverse(name:&str) -> Result<String, Error> {
             }
             // 添加挂载卷
             for mount in &container_info.Mounts {
-                command.push(format!("-v {}:{}", mount.Source, mount.Destination));
+                command.push(format!("-v {}:{}:{}", mount.Source, mount.Destination,mount.Mode));
             }
             // 添加端口映射
             for (port, bindings) in &container_info.HostConfig.PortBindings {
