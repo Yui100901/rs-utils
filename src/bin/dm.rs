@@ -191,11 +191,11 @@ fn reverse(name:&str) -> Result<String, Error> {
             }
             // 添加镜像名称
             command.push(container_info.Config.Image.clone());
-            // 添加其他配置信息
-            if let Some(cmd) = &container_info.Config.Cmd {
-                let cmd_str = cmd.join(" ");
-                command.push(format!("-- {}", cmd_str));
-            }
+            // // 添加其他配置信息
+            // if let Some(cmd) = &container_info.Config.Cmd {
+            //     let cmd_str = cmd.join(" ");
+            //     command.push(format!("-- {}", cmd_str));
+            // }
             Ok(command.join(" "))
         }
         Err(e) => {
