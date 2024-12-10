@@ -13,17 +13,18 @@ use rs_utils::file_utils;
 
 /// 命令行参数结构体
 #[derive(Parser, Debug)]
-#[command(author, version, about, long_about = None)]
+#[command(version,author="Yui100901", about="简易的项目构建工具", long_about = None)]
 struct Args {
     /// 是否并发构建
-    #[arg(short, long)]
+    #[arg(short, long,help = "并发构建")]
     concurrent: bool,
 
     /// 端口列表
-    #[arg(short, long)]
+    #[arg(short, long,help = "端口列表")]
     ports: Option<String>,
 
     /// 输入的文件或目录路径
+    #[arg(help = "文件路径或项目目录路径")]
     path: String,
 }
 
