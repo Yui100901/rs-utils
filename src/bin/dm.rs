@@ -182,7 +182,13 @@ fn reverse(name:&str) -> Result<String, Error> {
             }
             // 添加挂载卷
             for mount in &container_info.Mounts {
-                command.push(format!("-v {}:{}:{}", mount.Source, mount.Destination,mount.Mode));
+
+                if mount.Mode.is_empty()  {
+                    command.push(format!("-v {}:{}:{}", mount.Source, mount.Destination,"rw"));
+                }else {
+                    command.push(format!("-v {}:{}:{}", mount.Source, mount.Destination,mount.Mode));
+
+                }
             }
             // 添加端口映射
             for (port, bindings) in &container_info.HostConfig.PortBindings {
