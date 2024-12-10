@@ -3,7 +3,7 @@ use std::io::{BufRead, Error};
 use std::path::Path;
 use std::process::Command;
 use clap::{Parser, Subcommand};
-use log::{error, info};
+use log::{error, info, warn};
 use serde::Deserialize;
 use rs_utils::{docker_utils, file_utils, log_utils};
 use rs_utils::command_utils::run_command;
@@ -76,8 +76,10 @@ fn main() {
             Commands::Reverse {name } => {
                 match reverse(&name) {
                     Ok(cmd) => {
-                        info!("Generated docker command:\n{}",cmd.as_str());
-                        run_command(cmd[0],);
+                        info!("Generated docker command:\n{}",cmd.join(" "));
+                        docker_utils::container_stop(&[&name.as_str()]);
+                        docker_utils::container_remove(&[&name.as_str()]);
+                        docker_utils::docker_run_command(&cmd[1..].iter().collect());
                     }
                     Err(e) => {error!("Error to reverse container:{}",e)}
                 }
@@ -167,7 +169,7 @@ struct ContainerInfo {
     Mounts: Vec<Mount>,
 }
 
-fn reverse(name:&str) -> Result<String, Error> {
+fn reverse(name:&str) -> Result<Vec<String>, Error> {
     match docker_utils::container_inspect(name){
         Ok(data) => {
             let container_info: Vec<ContainerInfo> = serde_json::from_str(data.as_str())?;
@@ -221,8 +223,8 @@ fn reverse(name:&str) -> Result<String, Error> {
             //     let cmd_str = cmd.join(" ");
             //     command.push(format!("-- {}", cmd_str));
             // }
-            info!("{}",command);
-            Ok(command.join(" "))
+            warn!("{}",command);
+            Ok(command)
         }
         Err(e) => {
             error!("Failed to inspect container {}: {}", name, e);

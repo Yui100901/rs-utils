@@ -3,6 +3,11 @@ use log::{error, info};
 use std::io::Error;
 use std::process::Command;
 
+pub fn docker_run_command(args: &[&str])-> Result<String, Error>{
+    info!("执行自定义docker命令");
+    command_utils::run_command("docker",args)
+}
+
 /// 停止docker容器
 pub fn container_stop(containers: &[&str]) -> Result<String, Error> {
     info!("停止容器 {:?}", containers);
