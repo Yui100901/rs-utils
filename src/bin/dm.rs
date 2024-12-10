@@ -221,6 +221,7 @@ fn reverse(name:&str) -> Result<String, Error> {
             //     let cmd_str = cmd.join(" ");
             //     command.push(format!("-- {}", cmd_str));
             // }
+            info!("{:?}",command);
             Ok(command.join(" "))
         }
         Err(e) => {
