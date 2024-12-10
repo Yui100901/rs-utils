@@ -183,12 +183,12 @@ fn reverse(name:&str) -> Result<String, Error> {
             // 添加挂载卷
             for mount in &container_info.Mounts {
                 let mut volume_str=String::new();
-                // 检查并修复绝对路径
                 if !Path::new(&mount.Destination).is_absolute() {
+                    // 非绝对路径时挂载匿名卷
                     volume_str = format!("-v {}",mount.Destination);
                 }else {
                     volume_str = if mount.Mode.is_empty() {
-                        format!("-v {}:{}:rw", mount.Source, mount.Destination)
+                        format!("-v {}:{}", mount.Source, mount.Destination)
                     } else {
                         format!("-v {}:{}:{}", mount.Source, mount.Destination, mount.Mode)
                     };
