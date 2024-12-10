@@ -9,7 +9,7 @@ use rs_utils::{docker_utils, file_utils, log_utils};
 use rs_utils::command_utils::run_command;
 
 #[derive(Parser,Debug)]
-#[command(version, author, about, long_about = None)]
+#[command(version, author="Yui100901", about="Docker小工具，可用于管理容器。", long_about = None)]
 struct Cli {
     #[command(subcommand)]
     command: Option<Commands>,
@@ -17,24 +17,34 @@ struct Cli {
 
 #[derive(Subcommand,Debug)]
 enum Commands {
+    #[command(about="构建Docker镜像")]
     Build {
-        #[arg(short, long)]
+        #[arg(short, long,help = "构建完成后导出镜像")]
         export: bool,
-
+        #[arg(help = "Dockerfile所在路径")]
         path: String,
     },
-    Recreate {
+    Rerun {
         path: String,
     },
+    #[command(about="清理Docker镜像")]
     Clean{
     },
+    #[command(about="清理Docker镜像并导出所有镜像")]
     Import {
+        #[arg(help = "默认导出至当前目录下的images")]
         path: Option<String>,
     },
+    #[command(about="导入Docker镜像")]
     Export {
+        #[arg(help = "默认从当前目录下的images寻找镜像")]
         path: Option<String>,
     },
+    #[command(about="逆向Docker容器")]
     Reverse{
+        #[arg(short, long,help = "逆向解析完成后以解析出的命令重新创建容器")]
+        rerun: bool,
+        #[arg(help = "容器名称")]
         name:String,
     }
 }
@@ -51,7 +61,7 @@ fn main() {
                 }
                 build(&path, export).expect("构建失败");
             },
-            Commands::Recreate {path} => {
+            Commands::Rerun {path} => {
 
             },
             Commands::Clean {} =>{
@@ -73,13 +83,17 @@ fn main() {
                     export("images").expect("Export failed!");
                 }
             }
-            Commands::Reverse {name } => {
+            Commands::Reverse {rerun,name } => {
                 match reverse(&name) {
                     Ok(cmd) => {
+                        // warn!("{:?}",cmd);
                         info!("Generated docker command:\n{}",cmd.join(" "));
-                        docker_utils::container_stop(&[&name.as_str()]);
-                        docker_utils::container_remove(&[&name.as_str()]);
-                        docker_utils::docker_run_command(&cmd[1..].iter().collect());
+                        if rerun {
+                            docker_utils::container_stop(&[&name.as_str()]).unwrap();
+                            docker_utils::container_remove(&[&name.as_str()]).unwrap();
+                            let args:Vec<&str>=cmd[1..].iter().map(AsRef::as_ref).collect();
+                            docker_utils::docker_run_command(&args).expect("Docker command failed!");
+                        }
                     }
                     Err(e) => {error!("Error to reverse container:{}",e)}
                 }
@@ -223,7 +237,6 @@ fn reverse(name:&str) -> Result<Vec<String>, Error> {
             //     let cmd_str = cmd.join(" ");
             //     command.push(format!("-- {}", cmd_str));
             // }
-            warn!("{}",command);
             Ok(command)
         }
         Err(e) => {
