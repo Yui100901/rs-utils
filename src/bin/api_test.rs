@@ -4,7 +4,7 @@ use std::error::Error;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     // 定义API URL
-    let api_url = "http://127.0.0.1:21011/routePlan";
+    let api_url = "http://127.0.0.1:21012";
 
     // 创建HTTP客户端
     let client = reqwest::Client::new();
