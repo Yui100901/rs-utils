@@ -80,7 +80,7 @@ pub fn image_prune() -> Result<String, Error> {
 }
 
 /// 默认启动Docker容器
-pub fn default_create(name: &str, ports: &[&str]) -> Result<String, Error> {
+pub fn default_run(name: &str, ports: &[&str]) -> Result<String, Error> {
     info!("默认启动 {:?}", name);
     let mut args: Vec<String> = vec![
         "run".into(),
@@ -102,9 +102,9 @@ pub fn default_create(name: &str, ports: &[&str]) -> Result<String, Error> {
 }
 
 /// 重新创建Docker容器
-pub fn container_recreate(name: &str, ports: &[&str]) -> Result<String, Error> {
+pub fn container_rerun(name: &str, ports: &[&str]) -> Result<String, Error> {
     container_stop(&[name])?;
     container_remove(&[name])?;
-    default_create(name, ports)
+    default_run(name, ports)
 }
 

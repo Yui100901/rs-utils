@@ -147,7 +147,7 @@ impl Builder {
             // 将 Vec<&str> 转换为切片 &[&str]
             let ports_slice = Box::leak(ports_vec.into_boxed_slice());
             docker_utils::build(&self.name).expect("构建镜像失败");
-            if let Err(err) = docker_utils::container_recreate(&self.name, ports_slice) {
+            if let Err(err) = docker_utils::container_rerun(&self.name, ports_slice) {
                 info!("Docker重新启动容器失败: {}", err);
             } else {
                 info!("Docker构建成功");
