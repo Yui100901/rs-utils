@@ -6,6 +6,7 @@ use clap::{Parser, Subcommand};
 use log::{error, info};
 use serde::Deserialize;
 use rs_utils::{docker_utils, file_utils, log_utils};
+use rs_utils::command_utils::run_command;
 
 #[derive(Parser,Debug)]
 #[command(version, author, about, long_about = None)]
@@ -74,7 +75,10 @@ fn main() {
             }
             Commands::Reverse {name } => {
                 match reverse(&name) {
-                    Ok(cmd) => {info!("Generated docker command:\n{}",cmd.as_str())}
+                    Ok(cmd) => {
+                        info!("Generated docker command:\n{}",cmd.as_str());
+                        run_command(cmd[0],);
+                    }
                     Err(e) => {error!("Error to reverse container:{}",e)}
                 }
             }
@@ -178,35 +182,36 @@ fn reverse(name:&str) -> Result<String, Error> {
             //添加用户
             if let Some(user) = &container_info.Config.User {
                 if !user.is_empty() {
-                    command.push(format!("-u {}", user));
+                    command.push("-u".to_string());
+                    command.push(user.to_string());
                 }
             }
             // 添加环境变量
             if let Some(env_vars) = &container_info.Config.Env {
                 for env in env_vars {
-                    command.push(format!("-e {}", env));
+                    command.push("-e".to_string());
+                    command.push(env.to_string());
                 }
             }
             // 添加挂载卷
             for mount in &container_info.Mounts {
-                let mut volume_str=String::new();
+                command.push("-v".to_string());
                 if !Path::new(&mount.Destination).is_absolute() {
                     // 非绝对路径时挂载匿名卷
-                    volume_str = format!("-v {}",mount.Destination);
+                    command.push(mount.Destination.clone());
                 }else {
-                    volume_str = if mount.Mode.is_empty() {
-                        format!("-v {}:{}", mount.Source, mount.Destination)
+                     if mount.Mode.is_empty() {
+                        command.push(format!("{}:{}", mount.Source, mount.Destination));
                     } else {
-                        format!("-v {}:{}:{}", mount.Source, mount.Destination, mount.Mode)
+                         command.push(format!("{}:{}:{}", mount.Source, mount.Destination, mount.Mode));
                     };
-
                 }
-                command.push(volume_str);
             }
             // 添加端口映射
             for (port, bindings) in &container_info.HostConfig.PortBindings {
                 for binding in bindings {
-                    command.push(format!("-p {}:{}", binding.HostPort, port));
+                    command.push("-p".to_string());
+                    command.push(format!("{}:{}", binding.HostPort, port));
                 }
             }
             // 添加镜像名称
