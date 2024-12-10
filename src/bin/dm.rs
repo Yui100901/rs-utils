@@ -182,13 +182,19 @@ fn reverse(name:&str) -> Result<String, Error> {
             }
             // 添加挂载卷
             for mount in &container_info.Mounts {
-
-                if mount.Mode.is_empty()  {
-                    command.push(format!("-v {}:{}:{}", mount.Source, mount.Destination,"rw"));
+                let mut volume_str=String::new();
+                // 检查并修复绝对路径
+                if !Path::new(&mount.Destination).is_absolute() {
+                    volume_str = format!("-v {}",mount.Destination);
                 }else {
-                    command.push(format!("-v {}:{}:{}", mount.Source, mount.Destination,mount.Mode));
+                    volume_str = if mount.Mode.is_empty() {
+                        format!("-v {}:{}:rw", mount.Source, mount.Destination)
+                    } else {
+                        format!("-v {}:{}:{}", mount.Source, mount.Destination, mount.Mode)
+                    };
 
                 }
+                command.push(volume_str);
             }
             // 添加端口映射
             for (port, bindings) in &container_info.HostConfig.PortBindings {
