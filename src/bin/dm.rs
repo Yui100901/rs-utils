@@ -150,6 +150,7 @@ struct HostConfig {
 
 #[derive(Deserialize, Debug)]
 struct Config {
+    User: Option<String>,
     Env: Option<Vec<String>>,
     Cmd: Option<Vec<String>>,
     Image: String,
@@ -174,6 +175,10 @@ fn reverse(name:&str) -> Result<String, Error> {
                 "--name".to_string(),
                 name.to_string(),
             ];
+            //添加用户
+            if let Some(user) = &container_info.Config.User {
+                command.push(format!("-u {}", user));
+            }
             // 添加环境变量
             if let Some(env_vars) = &container_info.Config.Env {
                 for env in env_vars {
