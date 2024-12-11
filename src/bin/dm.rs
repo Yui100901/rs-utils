@@ -1,4 +1,4 @@
-use clap::{Parser, Subcommand};
+use clap::{CommandFactory, Parser, Subcommand};
 use log::{error, info, warn};
 use rs_utils::command_utils::run_command;
 use rs_utils::{docker_utils, file_utils, log_utils};
@@ -51,6 +51,11 @@ enum Commands {
 fn main() {
     log_utils::init_logger();
     let cli = Cli::parse();
+    // 如果没有输入任何子命令，显示帮助信息
+    if cli.command.is_none() {
+        Cli::command().print_help().unwrap();
+        std::process::exit(0);
+    }
     if let Some(cmd) = cli.command {
         match cmd {
             Commands::Build { export, path } => {
