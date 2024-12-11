@@ -164,8 +164,15 @@ struct PortBinding {
 }
 
 #[derive(Deserialize, Debug)]
+struct RestartPolicy{
+    Name: String,
+}
+
+#[derive(Deserialize, Debug)]
 struct HostConfig {
     PortBindings: HashMap<String, Vec<PortBinding>>,
+    RestartPolicy: RestartPolicy,
+    Privileged: bool,
 }
 
 #[derive(Deserialize, Debug)]
@@ -178,9 +185,70 @@ struct Config {
 
 #[derive(Deserialize, Debug)]
 struct ContainerInfo {
+    Name: String,
     Config: Config,
     HostConfig: HostConfig,
     Mounts: Vec<Mount>,
+}
+
+impl ContainerInfo {
+    pub fn to_shell_command(&self) -> Result<Vec<String>, Error> {
+        let name=self.Name.replace("/","");
+        let mut command:Vec<String> = vec![
+            "docker".to_string(),
+            "run".to_string(),
+            "-d".to_string(),
+            "--name".to_string(),
+            name
+        ];
+        //添加用户
+        if let Some(user) = &self.Config.User {
+            if !user.is_empty() {
+                command.push("-u".to_string());
+                command.push(user.to_string());
+            }
+        }
+        //添加权限
+        if self.HostConfig.Privileged{
+            command.push("--privileged".to_string());
+        }
+        // 添加环境变量
+        if let Some(env_vars) = &self.Config.Env {
+            for env in env_vars {
+                command.push("-e".to_string());
+                command.push(env.to_string());
+            }
+        }
+        // 添加挂载卷
+        for mount in &self.Mounts {
+            command.push("-v".to_string());
+            if !Path::new(&mount.Destination).is_absolute() {
+                // 非绝对路径时挂载匿名卷
+                command.push(mount.Destination.clone());
+            }else {
+                if mount.Mode.is_empty() {
+                    command.push(format!("{}:{}", mount.Source, mount.Destination));
+                } else {
+                    command.push(format!("{}:{}:{}", mount.Source, mount.Destination, mount.Mode));
+                };
+            }
+        }
+        // 添加端口映射
+        for (port, bindings) in &self.HostConfig.PortBindings {
+            for binding in bindings {
+                command.push("-p".to_string());
+                command.push(format!("{}:{}", binding.HostPort, port));
+            }
+        }
+        // 添加镜像名称
+        command.push(self.Config.Image.clone());
+        // // 添加其他配置信息
+        // if let Some(cmd) = &container_info.Config.Cmd {
+        //     let cmd_str = cmd.join(" ");
+        //     command.push(format!("-- {}", cmd_str));
+        // }
+        Ok(command)
+    }
 }
 
 fn reverse(name:&str) -> Result<Vec<String>, Error> {
@@ -188,56 +256,7 @@ fn reverse(name:&str) -> Result<Vec<String>, Error> {
         Ok(data) => {
             let container_info: Vec<ContainerInfo> = serde_json::from_str(data.as_str())?;
             let container_info= container_info.into_iter().next().unwrap();
-            let mut command:Vec<String> = vec![
-                "docker".to_string(),
-                "run".to_string(),
-                "-d".to_string(),
-                "--name".to_string(),
-                name.to_string(),
-            ];
-            //添加用户
-            if let Some(user) = &container_info.Config.User {
-                if !user.is_empty() {
-                    command.push("-u".to_string());
-                    command.push(user.to_string());
-                }
-            }
-            // 添加环境变量
-            if let Some(env_vars) = &container_info.Config.Env {
-                for env in env_vars {
-                    command.push("-e".to_string());
-                    command.push(env.to_string());
-                }
-            }
-            // 添加挂载卷
-            for mount in &container_info.Mounts {
-                command.push("-v".to_string());
-                if !Path::new(&mount.Destination).is_absolute() {
-                    // 非绝对路径时挂载匿名卷
-                    command.push(mount.Destination.clone());
-                }else {
-                     if mount.Mode.is_empty() {
-                        command.push(format!("{}:{}", mount.Source, mount.Destination));
-                    } else {
-                         command.push(format!("{}:{}:{}", mount.Source, mount.Destination, mount.Mode));
-                    };
-                }
-            }
-            // 添加端口映射
-            for (port, bindings) in &container_info.HostConfig.PortBindings {
-                for binding in bindings {
-                    command.push("-p".to_string());
-                    command.push(format!("{}:{}", binding.HostPort, port));
-                }
-            }
-            // 添加镜像名称
-            command.push(container_info.Config.Image.clone());
-            // // 添加其他配置信息
-            // if let Some(cmd) = &container_info.Config.Cmd {
-            //     let cmd_str = cmd.join(" ");
-            //     command.push(format!("-- {}", cmd_str));
-            // }
-            Ok(command)
+            container_info.to_shell_command()
         }
         Err(e) => {
             error!("Failed to inspect container {}: {}", name, e);
