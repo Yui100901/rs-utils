@@ -194,9 +194,8 @@ impl ContainerInfo {
             command.push("-P".to_string());
         }
         //添加容器名称
-        let name = self.Name.replace("/", "");
         command.push("--name".to_string());
-        command.push(name);
+        command.push(self.Name.trim_start_matches('/').to_string());
         //添加用户
         if let Some(user) = &self.Config.User {
             if !user.is_empty() {
@@ -212,20 +211,23 @@ impl ContainerInfo {
             }
         }
         // 添加挂载卷
-        for mount in &self.Mounts {
+        for mount in self.Mounts {
             command.push("-v".to_string());
             if !Path::new(&mount.Destination).is_absolute() {
                 // 非绝对路径时挂载匿名卷
                 command.push(mount.Destination.clone());
             } else {
-                if mount.Mode.is_empty() {
-                    command.push(format!("{}:{}", mount.Source, mount.Destination));
-                } else {
-                    command.push(format!(
-                        "{}:{}:{}",
-                        mount.Source, mount.Destination, mount.Mode
-                    ));
-                };
+                let volume = format!(
+                    "{}:{}{}",
+                    mount.Source,
+                    mount.Destination,
+                    if mount.Mode.is_empty() {
+                        "".to_string()
+                    } else {
+                        format!(":{}", mount.Mode)
+                    }
+                );
+                command.push(volume);
             }
         }
         // 添加端口映射
