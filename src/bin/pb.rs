@@ -25,15 +25,15 @@ struct Args {
 
     /// 输入的文件或目录路径
     #[arg(help = "文件路径或项目目录路径")]
-    path: String,
+    path: Option<String>,
 }
 
 fn main() {
     log_utils::init_logger();
     let args = Args::parse();
     let concurrent_build = args.concurrent;
-    let ports = args.ports.unwrap_or_else(|| "".to_string());
-    let path = args.path;
+    let ports = args.ports.unwrap_or("".to_string());
+    let path = args.path.unwrap_or(".".to_string());
 
     let port_list: Vec<String> = ports.split(',').map(|s| s.to_string()).collect();
     info!("输入路径: {}", &path);
