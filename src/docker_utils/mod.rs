@@ -3,9 +3,9 @@ use log::{error, info};
 use std::io::Error;
 use std::process::Command;
 
-pub fn docker_run_command(args: &[&str])-> Result<String, Error>{
+pub fn docker_run_command(args: &[&str]) -> Result<String, Error> {
     info!("执行自定义docker命令");
-    command_utils::run_command("docker",args)
+    command_utils::run_command("docker", args)
 }
 
 /// 停止docker容器
@@ -35,7 +35,7 @@ pub fn container_remove(containers: &[&str]) -> Result<String, Error> {
 /// 获取容器详细信息
 pub fn container_inspect(name: &str) -> Result<String, Error> {
     info!("获取容器 {}详细信息", name);
-    let mut args = vec!["container","inspect"];
+    let mut args = vec!["container", "inspect"];
     args.push(name);
     command_utils::run_command("docker", &args)
 }
@@ -58,15 +58,15 @@ pub fn image_remove(images: &[&str]) -> Result<String, Error> {
 /// 构建Docker镜像
 pub fn build(name: &str) -> Result<String, Error> {
     info!("构建镜像 {}", name);
-    let args =  vec!["build", "-t", name, "."];
+    let args = vec!["build", "-t", name, "."];
     command_utils::run_command("docker", &args)
 }
 
 /// 导出Docker镜像
-pub fn save(name: &str,path:&str) -> Result<String, Error> {
+pub fn save(name: &str, path: &str) -> Result<String, Error> {
     info!("导出镜像 {}", name);
-    let filename = format!("{}/{}.tar", path,name.replace(':', "_").replace('/', "_"));
-    let args =vec!["save", "-o", &filename, name];
+    let filename = format!("{}/{}.tar", path, name.replace(':', "_").replace('/', "_"));
+    let args = vec!["save", "-o", &filename, name];
     command_utils::run_command("docker", &args)
 }
 
@@ -112,4 +112,3 @@ pub fn container_rerun(name: &str, ports: &[&str]) -> Result<String, Error> {
     container_remove(&[name])?;
     default_run(name, ports)
 }
-

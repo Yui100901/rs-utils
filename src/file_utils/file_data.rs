@@ -1,9 +1,9 @@
+use log::error;
 use std::error::Error;
 use std::fs;
 use std::path::PathBuf;
-use log::error;
 
-pub struct FileData{
+pub struct FileData {
     pub path: String,
     pub path_buf: PathBuf,
     pub abs_path: String,
@@ -16,10 +16,8 @@ impl FileData {
         // 获取绝对路径
         let path_buf = PathBuf::from(&path);
         let abs_path_buf = match fs::canonicalize(&path_buf) {
-            Ok(pb)=>{
-                pb
-            },
-            Err(e)=>{
+            Ok(pb) => pb,
+            Err(e) => {
                 error!("Can't canonicalize path {}: {}", path_buf.display(), e);
                 return Err(Box::new(e));
             }

@@ -4,7 +4,7 @@ use std::process::{Command, Stdio};
 use std::{io, thread};
 
 /// 处理输出流的通用函数
-fn handle_output<T: BufRead>(reader: T, log:&str) -> String {
+fn handle_output<T: BufRead>(reader: T, log: &str) -> String {
     let mut output = String::new();
     for line in reader.split(b'\n') {
         match line {
@@ -13,7 +13,7 @@ fn handle_output<T: BufRead>(reader: T, log:&str) -> String {
                 match log {
                     "info" => {
                         info!("{}", line);
-                    },
+                    }
                     "warn" => {
                         warn!("{}", line);
                     }
@@ -60,9 +60,12 @@ pub fn run_command(name: &str, args: &[&str]) -> Result<String, io::Error> {
     cmd.wait().expect("Failed to wait on child");
 
     // 获取标准输出和标准错误
-    let stdout = stdout_handle.join().expect("The stdout thread has panicked");
-    let stderr = stderr_handle.join().expect("The stderr thread has panicked");
+    let stdout = stdout_handle
+        .join()
+        .expect("The stdout thread has panicked");
+    let stderr = stderr_handle
+        .join()
+        .expect("The stderr thread has panicked");
 
     Ok(stdout)
 }
-

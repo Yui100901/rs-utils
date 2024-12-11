@@ -152,7 +152,7 @@ impl Builder {
             } else {
                 info!("Docker构建成功");
             }
-            docker_utils::save(&self.name,".").expect("保存镜像失败");
+            docker_utils::save(&self.name, ".").expect("保存镜像失败");
         }
 
         let output_info = if build_flag == 0 {

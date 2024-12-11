@@ -1,6 +1,7 @@
 use clap::Parser;
 use log::{error, info};
 use rs_utils::build_utils::builder::Builder;
+use rs_utils::file_utils;
 use rs_utils::log_utils;
 use serde_yaml;
 use std::collections::HashMap;
@@ -9,18 +10,17 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::{fs, thread};
 use toml::from_str;
-use rs_utils::file_utils;
 
 /// 命令行参数结构体
 #[derive(Parser, Debug)]
 #[command(version,author="Yui100901", about="简易的项目构建工具", long_about = None)]
 struct Args {
     /// 是否并发构建
-    #[arg(short, long,help = "并发构建")]
+    #[arg(short, long, help = "并发构建")]
     concurrent: bool,
 
     /// 端口列表
-    #[arg(short, long,help = "端口列表")]
+    #[arg(short, long, help = "端口列表")]
     ports: Option<String>,
 
     /// 输入的文件或目录路径
@@ -40,8 +40,7 @@ fn main() {
     info!("是否并发构建: {}", concurrent_build);
     info!("端口列表: {:?}", port_list);
 
-    let file_data=file_utils::file_data::FileData::new(path.clone()).unwrap();
-
+    let file_data = file_utils::file_data::FileData::new(path.clone()).unwrap();
 
     let mut builder_list: Vec<Builder> = Vec::new();
 
