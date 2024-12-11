@@ -175,6 +175,7 @@ struct RestartPolicy {
 struct HostConfig {
     PortBindings: HashMap<String, Vec<PortBinding>>,
     RestartPolicy: RestartPolicy,
+    AutoRemove:bool,
     Privileged: bool,
     PublishAllPorts: bool,
 }
@@ -206,6 +207,10 @@ impl ContainerInfo {
         //映射所有端口
         if self.HostConfig.PublishAllPorts {
             command.push("-P".to_string());
+        }
+        //是否自动移除
+        if self.HostConfig.AutoRemove {
+            command.push("--rm".to_string());
         }
         //添加重启策略
         command.push(format!("--restart={}", self.HostConfig.RestartPolicy.Name));
