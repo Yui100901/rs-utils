@@ -5,7 +5,7 @@ use rs_utils::{docker_utils, file_utils, log_utils};
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::fs::File;
-use std::io::{BufRead, Error};
+use std::io::{Write, Error};
 use std::path::Path;
 use std::process::Command;
 
@@ -84,11 +84,11 @@ fn main() {
                 match reverse(&container_names) {
                     Ok(cmds) => {
                         // warn!("{:?}",cmd);
-                        let mut file = File::create("docker_commands.sh");
-                        writeln!(file, "#!/bin/bash")?;
+                        let mut file = File::create("docker_commands.sh").unwrap();
+                        writeln!(file, "#!/bin/bash").expect("Failed to write file!");
                         for (name,cmd) in cmds {
-                            writeln!(file, "# {}", name)?;
-                            writeln!(file, "{}", cmd.join(" "))?;
+                            writeln!(file, "# {}", name).expect("Failed to write file!");
+                            writeln!(file, "{}", cmd.join(" ")).expect("Failed to write file!");
                             info!("Generated docker command:\n{}", cmd.join(" "));
                             if rerun {
                                 docker_utils::container_stop(&[name.as_str()]).unwrap();
@@ -98,6 +98,7 @@ fn main() {
                                     .expect("Docker command failed!");
                             }
                         }
+                        info!("Save command to docker_commands.sh successfully!");
                     }
                     Err(e) => {
                         error!("Error to reverse container:{}", e)
@@ -206,6 +207,8 @@ impl ContainerInfo {
         if self.HostConfig.PublishAllPorts {
             command.push("-P".to_string());
         }
+        //添加重启策略
+        command.push(format!("--restart={}", self.HostConfig.RestartPolicy.Name));
         //添加容器名称
         command.push("--name".to_string());
         command.push(self.Name.trim_start_matches('/').to_string());
