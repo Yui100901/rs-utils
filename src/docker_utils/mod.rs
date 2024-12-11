@@ -34,7 +34,7 @@ pub fn container_remove(containers: &[&str]) -> Result<String, Error> {
 
 /// 获取容器详细信息
 pub fn container_inspect(name: &[&str]) -> Result<String, Error> {
-    info!("获取容器 {}详细信息", name);
+    info!("获取容器 {:?}详细信息", name);
     let mut args = vec!["container", "inspect"];
     args.extend_from_slice(name);
     command_utils::run_command("docker", &args)

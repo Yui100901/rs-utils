@@ -4,6 +4,7 @@ use rs_utils::command_utils::run_command;
 use rs_utils::{docker_utils, file_utils, log_utils};
 use serde::Deserialize;
 use std::collections::HashMap;
+use std::fs::File;
 use std::io::{BufRead, Error};
 use std::path::Path;
 use std::process::Command;
@@ -79,11 +80,15 @@ fn main() {
                 export(&path).expect("Export failed");
             }
             Commands::Reverse { rerun, names } => {
-                let container_names=names.iter().map(AsRef::as_ref).collect();
+                let container_names:Vec<&str>=names.iter().map(AsRef::as_ref).collect();
                 match reverse(&container_names) {
                     Ok(cmds) => {
                         // warn!("{:?}",cmd);
+                        let mut file = File::create("docker_commands.sh");
+                        writeln!(file, "#!/bin/bash")?;
                         for (name,cmd) in cmds {
+                            writeln!(file, "# {}", name)?;
+                            writeln!(file, "{}", cmd.join(" "))?;
                             info!("Generated docker command:\n{}", cmd.join(" "));
                             if rerun {
                                 docker_utils::container_stop(&[name.as_str()]).unwrap();
@@ -275,7 +280,7 @@ fn reverse(names: &[&str]) -> Result<HashMap<String,Vec<String>>, Error> {
             Ok(command_map)
         }
         Err(e) => {
-            error!("Failed to inspect container {}: {}", names, e);
+            error!("Failed to inspect container {:?}: {}", names, e);
             Err(e)
         }
     }
