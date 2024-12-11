@@ -44,7 +44,7 @@ enum Commands {
         #[arg(short, long, help = "逆向解析完成后以解析出的命令重新创建容器")]
         rerun: bool,
         #[arg(help = "容器ID或名称")]
-        name: String,
+        names: Vec<String>,
     },
 }
 
@@ -78,17 +78,20 @@ fn main() {
                 file_utils::create_directory(&path).expect("Create directory failed");
                 export(&path).expect("Export failed");
             }
-            Commands::Reverse { rerun, name } => {
-                match reverse(&name) {
-                    Ok(cmd) => {
+            Commands::Reverse { rerun, names } => {
+                let container_names=names.iter().map(AsRef::as_ref).collect();
+                match reverse(&container_names) {
+                    Ok(cmds) => {
                         // warn!("{:?}",cmd);
-                        info!("Generated docker command:\n{}", cmd.join(" "));
-                        if rerun {
-                            docker_utils::container_stop(&[&name.as_str()]).unwrap();
-                            docker_utils::container_remove(&[&name.as_str()]).unwrap();
-                            let args: Vec<&str> = cmd[1..].iter().map(AsRef::as_ref).collect();
-                            docker_utils::docker_run_command(&args)
-                                .expect("Docker command failed!");
+                        for (name,cmd) in cmds {
+                            info!("Generated docker command:\n{}", cmd.join(" "));
+                            if rerun {
+                                docker_utils::container_stop(&[name.as_str()]).unwrap();
+                                docker_utils::container_remove(&[name.as_str()]).unwrap();
+                                let args: Vec<&str> = cmd[1..].iter().map(AsRef::as_ref).collect();
+                                docker_utils::docker_run_command(&args)
+                                    .expect("Docker command failed!");
+                            }
                         }
                     }
                     Err(e) => {
@@ -253,15 +256,26 @@ impl ContainerInfo {
     }
 }
 
-fn reverse(name: &str) -> Result<Vec<String>, Error> {
-    match docker_utils::container_inspect(name) {
+fn reverse(names: &[&str]) -> Result<HashMap<String,Vec<String>>, Error> {
+    match docker_utils::container_inspect(names) {
         Ok(data) => {
-            let container_info: Vec<ContainerInfo> = serde_json::from_str(data.as_str())?;
-            let container_info = container_info.into_iter().next().unwrap();
-            container_info.to_shell_command()
+            let container_info_list: Vec<ContainerInfo> = serde_json::from_str(data.as_str())?;
+            let mut command_map: HashMap<String,Vec<String>> = HashMap::new();
+            for container_info in container_info_list{
+                match container_info.to_shell_command() {
+                    Ok(command) => {
+                        command_map.insert(container_info.Name, command);
+                    },
+                    Err(e) => {
+                        error!("{}",e);
+                        continue;
+                    }
+                }
+            }
+            Ok(command_map)
         }
         Err(e) => {
-            error!("Failed to inspect container {}: {}", name, e);
+            error!("Failed to inspect container {}: {}", names, e);
             Err(e)
         }
     }

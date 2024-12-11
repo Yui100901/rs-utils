@@ -76,9 +76,9 @@ pub fn replace(source: &Path, target: &Path) -> Result<String, io::Error> {
 
 /// 创建文件夹
 pub fn create_directory(path: &str) -> Result<FileData, Box<dyn Error>> {
-    let images_dir = Path::new(path);
-    if !images_dir.exists() {
-        fs::create_dir(images_dir)?;
+    let dir = Path::new(path);
+    if !dir.exists() {
+        fs::create_dir(dir)?;
     }
     FileData::new(String::from(path))
 }
