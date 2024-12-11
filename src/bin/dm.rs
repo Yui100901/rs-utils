@@ -187,13 +187,10 @@ struct ContainerInfo {
 
 impl ContainerInfo {
     pub fn to_shell_command(&self) -> Result<Vec<String>, Error> {
-        let name=self.Name.replace("/","");
         let mut command:Vec<String> = vec![
             "docker".to_string(),
             "run".to_string(),
             "-d".to_string(),
-            "--name".to_string(),
-            name
         ];
         //添加权限
         if self.HostConfig.Privileged{
@@ -203,6 +200,10 @@ impl ContainerInfo {
         if self.HostConfig.PublishAllPorts{
             command.push("-P".to_string());
         }
+        //添加容器名称
+        let name=self.Name.replace("/","");
+        command.push("--name".to_string());
+        command.push(name);
         //添加用户
         if let Some(user) = &self.Config.User {
             if !user.is_empty() {
