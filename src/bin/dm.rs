@@ -40,11 +40,11 @@ enum Commands {
         #[arg(help = "默认从当前目录下的images寻找镜像")]
         path: Option<String>,
     },
-    #[command(about="逆向Docker容器")]
+    #[command(about="逆向Docker容器到启动命令")]
     Reverse{
         #[arg(short, long,help = "逆向解析完成后以解析出的命令重新创建容器")]
         rerun: bool,
-        #[arg(help = "容器名称")]
+        #[arg(help = "容器ID或名称")]
         name:String,
     }
 }
@@ -68,20 +68,13 @@ fn main() {
                 clean().expect("Failed to clean containers!");
             },
             Commands::Import {path} => {
-                if let Some(path) = path {
-                    import(&path).expect("Import failed!");
-                }else {
-                    import("images").expect("Import failed!");
-                }
+                let path = path.unwrap_or_else(|| "images".to_string());
+                import(&path).expect("Import failed!");
             }
             Commands::Export {path} => {
-                if let Some(path) = path {
-                    file_utils::create_directory(&path).expect("Create directory failed!");
-                    export(&path).expect("Export failed!");
-                }else {
-                    file_utils::create_directory("images").expect("Create directory failed!");
-                    export("images").expect("Export failed!");
-                }
+                let path = path.unwrap_or_else(|| "images".to_string());
+                file_utils::create_directory(&path).expect("Create directory failed");
+                export(&path).expect("Export failed");
             }
             Commands::Reverse {rerun,name } => {
                 match reverse(&name) {
@@ -202,13 +195,6 @@ impl ContainerInfo {
             "--name".to_string(),
             name
         ];
-        //添加用户
-        if let Some(user) = &self.Config.User {
-            if !user.is_empty() {
-                command.push("-u".to_string());
-                command.push(user.to_string());
-            }
-        }
         //添加权限
         if self.HostConfig.Privileged{
             command.push("--privileged".to_string());
@@ -216,6 +202,13 @@ impl ContainerInfo {
         //映射所有端口
         if self.HostConfig.PublishAllPorts{
             command.push("-P".to_string());
+        }
+        //添加用户
+        if let Some(user) = &self.Config.User {
+            if !user.is_empty() {
+                command.push("-u".to_string());
+                command.push(user.to_string());
+            }
         }
         // 添加环境变量
         if let Some(env_vars) = &self.Config.Env {
