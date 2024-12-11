@@ -211,7 +211,7 @@ impl ContainerInfo {
             }
         }
         // 添加挂载卷
-        for mount in self.Mounts {
+        for mount in &self.Mounts {
             command.push("-v".to_string());
             if !Path::new(&mount.Destination).is_absolute() {
                 // 非绝对路径时挂载匿名卷
