@@ -173,6 +173,7 @@ struct HostConfig {
     PortBindings: HashMap<String, Vec<PortBinding>>,
     RestartPolicy: RestartPolicy,
     Privileged: bool,
+    PublishAllPorts: bool,
 }
 
 #[derive(Deserialize, Debug)]
@@ -211,6 +212,10 @@ impl ContainerInfo {
         //添加权限
         if self.HostConfig.Privileged{
             command.push("--privileged".to_string());
+        }
+        //映射所有端口
+        if self.HostConfig.PublishAllPorts{
+            command.push("-P".to_string());
         }
         // 添加环境变量
         if let Some(env_vars) = &self.Config.Env {
