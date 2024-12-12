@@ -5,7 +5,7 @@ use rs_utils::{docker_utils, file_utils, log_utils};
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::fs::File;
-use std::io::{Write, Error};
+use std::io::{Error, Write};
 use std::path::Path;
 use std::process::Command;
 
@@ -80,13 +80,13 @@ fn main() {
                 export(&path).expect("Export failed");
             }
             Commands::Reverse { rerun, names } => {
-                let container_names:Vec<&str>=names.iter().map(AsRef::as_ref).collect();
+                let container_names: Vec<&str> = names.iter().map(AsRef::as_ref).collect();
                 match reverse(&container_names) {
                     Ok(cmds) => {
                         // warn!("{:?}",cmd);
                         let mut file = File::create("docker_commands.sh").unwrap();
                         writeln!(file, "#!/bin/bash").expect("Failed to write file!");
-                        for (name,cmd) in cmds {
+                        for (name, cmd) in cmds {
                             writeln!(file, "# {}", name).expect("Failed to write file!");
                             writeln!(file, "{}", cmd.join(" ")).expect("Failed to write file!");
                             info!("Generated docker command:\n{}", cmd.join(" "));
@@ -175,7 +175,7 @@ struct RestartPolicy {
 struct HostConfig {
     PortBindings: HashMap<String, Vec<PortBinding>>,
     RestartPolicy: RestartPolicy,
-    AutoRemove:bool,
+    AutoRemove: bool,
     Privileged: bool,
     PublishAllPorts: bool,
 }
@@ -269,18 +269,18 @@ impl ContainerInfo {
     }
 }
 
-fn reverse(names: &[&str]) -> Result<HashMap<String,Vec<String>>, Error> {
+fn reverse(names: &[&str]) -> Result<HashMap<String, Vec<String>>, Error> {
     match docker_utils::container_inspect(names) {
         Ok(data) => {
             let container_info_list: Vec<ContainerInfo> = serde_json::from_str(data.as_str())?;
-            let mut command_map: HashMap<String,Vec<String>> = HashMap::new();
-            for container_info in container_info_list{
+            let mut command_map: HashMap<String, Vec<String>> = HashMap::new();
+            for container_info in container_info_list {
                 match container_info.to_shell_command() {
                     Ok(command) => {
                         command_map.insert(container_info.Name, command);
-                    },
+                    }
                     Err(e) => {
-                        error!("{}",e);
+                        error!("{}", e);
                         continue;
                     }
                 }

@@ -1,4 +1,6 @@
+use crate::build_utils::builder;
 use crate::{command_utils, docker_utils, file_utils, git_utils};
+use env_logger::builder;
 use log::{error, info};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -7,8 +9,6 @@ use std::fs;
 use std::io::Error;
 use std::path::Path;
 use std::process::Command;
-use env_logger::builder;
-use crate::build_utils::builder;
 
 /// 结构体定义: 存储仓库信息
 #[derive(Debug, Serialize, Deserialize, Default)]
@@ -54,8 +54,8 @@ pub struct Project {
     pub repository: Repository,
     #[serde(default)]
     pub build_message: String,
-    #[serde(skip_serializing,skip_deserializing)]
-    pub builder_map:HashMap<String,Box<dyn builder::Builder>>,
+    #[serde(skip_serializing, skip_deserializing)]
+    pub builder_map: HashMap<String, Box<dyn builder::Builder>>,
 }
 
 impl Project {
@@ -69,7 +69,7 @@ impl Project {
     ) -> Self {
         let repository = Repository::new(url, branch);
         let project = Project {
-            path:path.clone(),
+            path: path.clone(),
             name,
             ports,
             repository,
@@ -118,20 +118,64 @@ impl Project {
     /// 初始化构建器
     pub fn check_builder(&mut self) {
         let path_str = self.path.to_string();
-        let file_types:Vec<(&str,Box<dyn Fn() -> Box<dyn builder::Builder>>)> = vec![
-            ("pom.xml", Box::new(|| Box::new(builder::Maven::new(path_str.clone())) as Box<dyn builder::Builder>)),
-            ("build.gradle", Box::new(|| Box::new(builder::Gradle::new(path_str.clone())) as Box<dyn builder::Builder>)),
-            ("requirements.txt", Box::new(|| Box::new(builder::Python::new(path_str.clone())) as Box<dyn builder::Builder>)),
-            ("package.json", Box::new(|| Box::new(builder::Node::new(path_str.clone())) as Box<dyn builder::Builder>)),
-            ("go.mod", Box::new(|| Box::new(builder::Go::new(path_str.clone())) as Box<dyn builder::Builder>)),
-            ("CMakeLists.txt", Box::new(|| Box::new(builder::C::new(path_str.clone())) as Box<dyn builder::Builder>)),
-            ("Cargo.toml", Box::new(|| Box::new(builder::Rust::new(path_str.clone())) as Box<dyn builder::Builder>)),
-            ("Dockerfile", Box::new(|| Box::new(builder::Docker::new(path_str.clone(),self.name.to_string())) as Box<dyn builder::Builder>)),
+        let file_types: Vec<(&str, Box<dyn Fn() -> Box<dyn builder::Builder>>)> = vec![
+            (
+                "pom.xml",
+                Box::new(|| {
+                    Box::new(builder::Maven::new(path_str.clone())) as Box<dyn builder::Builder>
+                }),
+            ),
+            (
+                "build.gradle",
+                Box::new(|| {
+                    Box::new(builder::Gradle::new(path_str.clone())) as Box<dyn builder::Builder>
+                }),
+            ),
+            (
+                "requirements.txt",
+                Box::new(|| {
+                    Box::new(builder::Python::new(path_str.clone())) as Box<dyn builder::Builder>
+                }),
+            ),
+            (
+                "package.json",
+                Box::new(|| {
+                    Box::new(builder::Node::new(path_str.clone())) as Box<dyn builder::Builder>
+                }),
+            ),
+            (
+                "go.mod",
+                Box::new(|| {
+                    Box::new(builder::Go::new(path_str.clone())) as Box<dyn builder::Builder>
+                }),
+            ),
+            (
+                "CMakeLists.txt",
+                Box::new(|| {
+                    Box::new(builder::C::new(path_str.clone())) as Box<dyn builder::Builder>
+                }),
+            ),
+            (
+                "Cargo.toml",
+                Box::new(|| {
+                    Box::new(builder::Rust::new(path_str.clone())) as Box<dyn builder::Builder>
+                }),
+            ),
+            (
+                "Dockerfile",
+                Box::new(|| {
+                    Box::new(builder::Docker::new(
+                        path_str.clone(),
+                        self.name.to_string(),
+                    )) as Box<dyn builder::Builder>
+                }),
+            ),
         ];
         for (file_type, create_builder) in file_types {
             if Path::new(&format!("{}/{}", path_str, file_type)).exists() {
                 info!("发现文件 {}。", file_type);
-                self.builder_map.insert(file_type.to_string(), create_builder());
+                self.builder_map
+                    .insert(file_type.to_string(), create_builder());
             }
         }
     }
@@ -147,9 +191,5 @@ impl Project {
         self.build_message = format!("{}", self.name);
     }
 
-    pub fn deploy(&self){
-
-    }
+    pub fn deploy(&self) {}
 }
-
-

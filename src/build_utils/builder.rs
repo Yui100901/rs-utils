@@ -1,39 +1,39 @@
+use crate::{command_utils, docker_utils, file_utils};
+use log::info;
 use std::fmt::Debug;
 use std::io::Error;
 use std::path::Path;
-use log::info;
-use crate::{command_utils, docker_utils, file_utils};
 
-pub(crate) trait Builder:Debug {
+pub(crate) trait Builder: Debug {
     fn build(&self) -> Result<String, Error>;
 }
 #[derive(Debug)]
-pub(crate) struct Maven{
+pub(crate) struct Maven {
     path: String,
 }
 
 impl Maven {
     pub(crate) fn new(path: String) -> Self {
-        Maven{path}
+        Maven { path }
     }
 }
 
 impl Builder for Maven {
     /// 执行 Maven 构建
-    fn build(&self) -> Result<String, Error>{
+    fn build(&self) -> Result<String, Error> {
         info!("构建Maven项目");
         command_utils::run_command("mvn", &["clean", "package"])
     }
 }
 
 #[derive(Debug)]
-pub(crate) struct Gradle{
+pub(crate) struct Gradle {
     path: String,
 }
 
 impl Gradle {
     pub(crate) fn new(path: String) -> Self {
-        Gradle{path}
+        Gradle { path }
     }
 }
 
@@ -46,13 +46,13 @@ impl Builder for Gradle {
 }
 
 #[derive(Debug)]
-pub(crate) struct Python{
-    path: String
+pub(crate) struct Python {
+    path: String,
 }
 
 impl Python {
     pub(crate) fn new(path: String) -> Self {
-        Python{path}
+        Python { path }
     }
 }
 
@@ -74,13 +74,13 @@ impl Builder for Python {
 }
 
 #[derive(Debug)]
-pub(crate) struct Node{
+pub(crate) struct Node {
     path: String,
 }
 
 impl Node {
     pub(crate) fn new(path: String) -> Self {
-        Node{path}
+        Node { path }
     }
 }
 
@@ -112,13 +112,13 @@ impl Builder for Node {
 }
 
 #[derive(Debug)]
-pub(crate) struct Go{
+pub(crate) struct Go {
     path: String,
 }
 
 impl Go {
     pub(crate) fn new(path: String) -> Self {
-        Go{path}
+        Go { path }
     }
 }
 
@@ -133,13 +133,13 @@ impl Builder for Go {
 }
 
 #[derive(Debug)]
-pub(crate) struct C{
+pub(crate) struct C {
     path: String,
 }
 
 impl C {
     pub(crate) fn new(path: String) -> Self {
-        C{path}
+        C { path }
     }
 }
 
@@ -153,7 +153,7 @@ impl Builder for C {
 }
 
 #[derive(Debug)]
-pub(crate) struct Rust{
+pub(crate) struct Rust {
     path: String,
 }
 
@@ -172,14 +172,14 @@ impl Builder for Rust {
 }
 
 #[derive(Debug)]
-pub(crate) struct Docker{
-    path:String,
-    name:String
+pub(crate) struct Docker {
+    path: String,
+    name: String,
 }
 
 impl Docker {
-    pub(crate) fn new(path:String, name:String) ->Self{
-        Docker{path,name}
+    pub(crate) fn new(path: String, name: String) -> Self {
+        Docker { path, name }
     }
 }
 

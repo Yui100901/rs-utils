@@ -1,2 +1,2 @@
-pub mod project;
 mod builder;
+pub mod project;

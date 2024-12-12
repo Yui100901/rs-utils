@@ -104,13 +104,13 @@ fn main() {
     //         handle.join().expect("线程执行失败");
     //     }
     // } else {
-        info!("顺序构建");
-        let mut builders = &mut builder_list;
-        builders.iter_mut().for_each(|builder| {
-            builder.get_source_code();
-            builder.check_builder();
-            builder.build();
-        });
+    info!("顺序构建");
+    let mut builders = &mut builder_list;
+    builders.iter_mut().for_each(|builder| {
+        builder.get_source_code();
+        builder.check_builder();
+        builder.build();
+    });
     // }
 
     for b in builder_list.iter() {
