@@ -115,7 +115,7 @@ fn main() {
         builder.get_source_code();
         builder.check_builder();
         builder.build();
-        if deploy{
+        if deploy {
             builder.deploy_to_docker();
         }
     });

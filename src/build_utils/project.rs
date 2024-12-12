@@ -183,7 +183,7 @@ impl Project {
     /// 构建项目
     pub fn build(&mut self) {
         std::env::set_current_dir(&self.path).unwrap();
-        for (_,builder) in self.builder_vec.iter() {
+        for (_, builder) in self.builder_vec.iter() {
             builder.build().expect("构建出错");
         }
 
@@ -193,10 +193,10 @@ impl Project {
 
     /// 部署到docker
     pub fn deploy_to_docker(&self) {
-        if !self.builder_vec.iter().any(|(key,_)| key == "Dockerfile") {
-            error!("项目{}没有对应的Dockerfile文件，无法部署！",self.name);
+        if !self.builder_vec.iter().any(|(key, _)| key == "Dockerfile") {
+            error!("项目{}没有对应的Dockerfile文件，无法部署！", self.name);
         }
-        let port_list=self.ports.iter().map(|s| s.as_str()).collect::<Vec<&str>>();
+        let port_list = self.ports.iter().map(|s| s.as_str()).collect::<Vec<&str>>();
         docker_utils::container_rerun(&self.name, &port_list).expect("启动docker容器出错!");
     }
 }
