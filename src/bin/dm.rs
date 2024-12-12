@@ -30,14 +30,14 @@ enum Commands {
     },
     #[command(about = "清理Docker镜像")]
     Clean {},
-    #[command(about = "清理Docker镜像并导出所有镜像")]
+    #[command(about = "导入Docker镜像")]
     Import {
-        #[arg(help = "默认导出至当前目录下的images")]
+        #[arg(help = "默认从当前目录下的images寻找镜像")]
         path: Option<String>,
     },
-    #[command(about = "导入Docker镜像")]
+    #[command(about = "清理Docker镜像并导出所有镜像")]
     Export {
-        #[arg(help = "默认从当前目录下的images寻找镜像")]
+        #[arg(help = "默认导出至当前目录下的images")]
         path: Option<String>,
     },
     #[command(about = "逆向Docker容器到启动命令")]
