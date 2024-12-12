@@ -1,6 +1,6 @@
 use clap::Parser;
 use log::{error, info};
-use rs_utils::build_utils::builder::Builder;
+use rs_utils::build_utils::builder::Project;
 use rs_utils::file_utils;
 use rs_utils::log_utils;
 use serde_yaml;
@@ -42,11 +42,11 @@ fn main() {
 
     let file_data = file_utils::file_data::FileData::new(path.clone()).unwrap();
 
-    let mut builder_list: Vec<Builder> = Vec::new();
+    let mut builder_list: Vec<Project> = Vec::new();
 
     if file_data.metadata.is_dir() {
-        let b = Builder::new(
-            file_data.abs_path,
+        let b = Project::new(
+            file_data.abs_path.trim_start_matches(r"\\?\").to_string(),
             file_data.filename,
             port_list,
             "".to_string(),
@@ -66,13 +66,13 @@ fn main() {
         let mut data = String::new();
         file.read_to_string(&mut data).expect("读取文件出错");
 
-        let result: HashMap<String, Builder> = serde_yaml::from_str(&data).expect("解析 YAML 出错");
+        let result: HashMap<String, Project> = serde_yaml::from_str(&data).expect("解析 YAML 出错");
 
         for (key, b) in result {
             info!("Key: {}, Parsed Struct: {:?}", key, b);
             let project_dir = work_dir.join(&b.name);
             let project_dir_cleaned = project_dir.to_str().unwrap().trim_start_matches(r"\\?\");
-            let b1 = Builder::new(
+            let b1 = Project::new(
                 String::from(project_dir_cleaned),
                 b.name,
                 b.ports.clone(),
@@ -83,36 +83,36 @@ fn main() {
         }
     }
 
-    let builder_list = Arc::new(Mutex::new(builder_list));
+    // let builder_list = Arc::new(Mutex::new(builder_list));
 
-    if concurrent_build {
-        let mut handles = vec![];
-
-        for _ in 0..builder_list.lock().unwrap().len() {
-            let b_clone = Arc::clone(&builder_list);
-            let handle = thread::spawn(move || {
-                let mut b = b_clone.lock().unwrap();
-                b.iter_mut().for_each(|builder| {
-                    builder.get_source_code();
-                    builder.build();
-                });
-            });
-            handles.push(handle);
-        }
-
-        for handle in handles {
-            handle.join().expect("线程执行失败");
-        }
-    } else {
+    // if concurrent_build {
+    //     let mut handles = vec![];
+    //
+    //     for _ in 0..builder_list.lock().unwrap().len() {
+    //         let b_clone = Arc::clone(&builder_list);
+    //         let handle = thread::spawn(move || {
+    //             let mut b = b_clone.lock().unwrap();
+    //             b.iter_mut().for_each(|builder| {
+    //                 builder.get_source_code();
+    //                 builder.build();
+    //             });
+    //         });
+    //         handles.push(handle);
+    //     }
+    //
+    //     for handle in handles {
+    //         handle.join().expect("线程执行失败");
+    //     }
+    // } else {
         info!("顺序构建");
-        let mut builders = builder_list.lock().unwrap();
+        let mut builders = &mut builder_list;
         builders.iter_mut().for_each(|builder| {
             builder.get_source_code();
             builder.build();
         });
-    }
+    // }
 
-    for b in builder_list.lock().unwrap().iter() {
+    for b in builder_list.iter() {
         info!("{}", b.build_message);
     }
 }
