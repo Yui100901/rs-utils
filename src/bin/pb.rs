@@ -1,6 +1,6 @@
 use clap::Parser;
 use log::{error, info};
-use rs_utils::build_utils::builder::Project;
+use rs_utils::build_utils::project::Project;
 use rs_utils::file_utils;
 use rs_utils::log_utils;
 use serde_yaml;
@@ -108,6 +108,7 @@ fn main() {
         let mut builders = &mut builder_list;
         builders.iter_mut().for_each(|builder| {
             builder.get_source_code();
+            builder.check_builder();
             builder.build();
         });
     // }
