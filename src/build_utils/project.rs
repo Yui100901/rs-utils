@@ -55,7 +55,7 @@ pub struct Project {
     #[serde(default)]
     pub build_message: String,
     #[serde(skip_serializing,skip_deserializing)]
-    pub builder_types:Vec<Box<dyn builder::Builder>>,
+    pub builder_map:HashMap<String,Box<dyn builder::Builder>>,
 }
 
 impl Project {
@@ -74,7 +74,7 @@ impl Project {
             ports,
             repository,
             build_message: String::new(),
-            builder_types: Vec::new(),
+            builder_map: HashMap::new(),
         };
         project.init_info();
         project
@@ -126,12 +126,12 @@ impl Project {
             ("go.mod", Box::new(|| Box::new(builder::Go::new(path_str.clone())) as Box<dyn builder::Builder>)),
             ("CMakeLists.txt", Box::new(|| Box::new(builder::C::new(path_str.clone())) as Box<dyn builder::Builder>)),
             ("Cargo.toml", Box::new(|| Box::new(builder::Rust::new(path_str.clone())) as Box<dyn builder::Builder>)),
-            ("Dockerfile", Box::new(|| Box::new(builder::Docker::new(path_str.clone(),"".to_string())) as Box<dyn builder::Builder>)),
+            ("Dockerfile", Box::new(|| Box::new(builder::Docker::new(path_str.clone(),self.name.to_string())) as Box<dyn builder::Builder>)),
         ];
         for (file_type, create_builder) in file_types {
             if Path::new(&format!("{}/{}", path_str, file_type)).exists() {
                 info!("发现文件 {}。", file_type);
-                self.builder_types.push(create_builder());
+                self.builder_map.insert(file_type.to_string(), create_builder());
             }
         }
     }
@@ -139,8 +139,8 @@ impl Project {
     /// 构建项目
     pub fn build(&mut self) {
         std::env::set_current_dir(&self.path).unwrap();
-        for builder_type in self.builder_types.iter() {
-            builder_type.build().expect("构建出错");
+        for builder in self.builder_map.iter() {
+            builder.build().expect("构建出错");
         }
 
         info!("构建项目 {} 结束。", self.name);
