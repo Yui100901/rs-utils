@@ -183,7 +183,7 @@ impl Project {
     /// 构建项目
     pub fn build(&mut self) {
         std::env::set_current_dir(&self.path).unwrap();
-        for builder in self.builder_map.iter() {
+        for (_,builder) in self.builder_map.iter() {
             builder.build().expect("构建出错");
         }
 
