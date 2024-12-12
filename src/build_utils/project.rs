@@ -3,7 +3,7 @@ use crate::{command_utils, docker_utils, file_utils, git_utils};
 use env_logger::builder;
 use log::{error, info};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::fmt::Debug;
 use std::fs;
 use std::io::Error;
@@ -55,7 +55,7 @@ pub struct Project {
     #[serde(default)]
     pub build_message: String,
     #[serde(skip_serializing, skip_deserializing)]
-    pub builder_map: HashMap<String, Box<dyn builder::Builder>>,
+    pub builder_vec: Vec<(String, Box<dyn builder::Builder>)>,
 }
 
 impl Project {
@@ -74,7 +74,7 @@ impl Project {
             ports,
             repository,
             build_message: String::new(),
-            builder_map: HashMap::new(),
+            builder_vec: Vec::new(),
         };
         project.init_info();
         project
@@ -174,8 +174,8 @@ impl Project {
         for (file_type, create_builder) in file_types {
             if Path::new(&format!("{}/{}", path_str, file_type)).exists() {
                 info!("发现文件 {}。", file_type);
-                self.builder_map
-                    .insert(file_type.to_string(), create_builder());
+                self.builder_vec
+                    .push((file_type.to_string(), create_builder()));
             }
         }
     }
@@ -183,7 +183,7 @@ impl Project {
     /// 构建项目
     pub fn build(&mut self) {
         std::env::set_current_dir(&self.path).unwrap();
-        for (_,builder) in self.builder_map.iter() {
+        for (_,builder) in self.builder_vec.iter() {
             builder.build().expect("构建出错");
         }
 
@@ -193,7 +193,7 @@ impl Project {
 
     /// 部署到docker
     pub fn deploy_to_docker(&self) {
-        if !self.builder_map.contains_key("Dockerfile") {
+        if !self.builder_vec.iter().any(|(key,_)| key == "Dockerfile") {
             error!("项目{}没有对应的Dockerfile文件，无法部署！",self.name);
         }
         let port_list=self.ports.iter().map(|s| s.as_str()).collect::<Vec<&str>>();
