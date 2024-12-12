@@ -191,5 +191,12 @@ impl Project {
         self.build_message = format!("{}", self.name);
     }
 
-    pub fn deploy(&self) {}
+    /// 部署到docker
+    pub fn deploy_to_docker(&self) {
+        if !self.builder_map.contains_key("Dockerfile") {
+            error!("项目{}没有对应的Dockerfile文件，无法部署！",self.name);
+        }
+        let port_list=self.ports.iter().map(|s| s.as_str()).collect::<Vec<&str>>();
+        docker_utils::container_rerun(&self.name, &port_list).expect("启动docker容器出错!");
+    }
 }

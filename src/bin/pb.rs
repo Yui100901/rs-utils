@@ -19,6 +19,10 @@ struct Args {
     #[arg(short, long, help = "并发构建")]
     concurrent: bool,
 
+    /// 是否自动部署
+    #[arg(short, long, help = "自动部署")]
+    deploy: bool,
+
     /// 端口列表
     #[arg(short, long, help = "端口列表")]
     ports: Option<String>,
@@ -32,6 +36,7 @@ fn main() {
     log_utils::init_logger();
     let args = Args::parse();
     let concurrent_build = args.concurrent;
+    let deploy = args.deploy;
     let ports = args.ports.unwrap_or("".to_string());
     let path = args.path.unwrap_or(".".to_string());
 
@@ -42,7 +47,7 @@ fn main() {
 
     let file_data = file_utils::file_data::FileData::new(path.clone()).unwrap();
 
-    let mut builder_list: Vec<Project> = Vec::new();
+    let mut project_list: Vec<Project> = Vec::new();
 
     if file_data.metadata.is_dir() {
         let b = Project::new(
@@ -52,7 +57,7 @@ fn main() {
             "".to_string(),
             "".to_string(),
         );
-        builder_list.push(b);
+        project_list.push(b);
     } else {
         let work_dir = fs::canonicalize(Path::new("."))
             .expect("获取当前目录出错")
@@ -79,7 +84,7 @@ fn main() {
                 b.repository.url.clone(),
                 b.repository.branch.clone(),
             );
-            builder_list.push(b1);
+            project_list.push(b1);
         }
     }
 
@@ -105,15 +110,18 @@ fn main() {
     //     }
     // } else {
     info!("顺序构建");
-    let mut builders = &mut builder_list;
-    builders.iter_mut().for_each(|builder| {
+    let mut projects = &mut project_list;
+    projects.iter_mut().for_each(|builder| {
         builder.get_source_code();
         builder.check_builder();
         builder.build();
+        if deploy{
+            builder.deploy_to_docker();
+        }
     });
     // }
 
-    for b in builder_list.iter() {
+    for b in project_list.iter() {
         info!("{}", b.build_message);
     }
 }
