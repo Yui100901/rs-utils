@@ -1,3 +1,5 @@
+pub mod container_info;
+
 use crate::command_utils;
 use log::{error, info};
 use std::io::Error;
