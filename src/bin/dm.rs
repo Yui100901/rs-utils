@@ -1,4 +1,4 @@
-use clap::{CommandFactory, Parser, Subcommand};
+use clap::{command, CommandFactory, Parser, Subcommand};
 use log::{error, info, warn};
 use rs_utils::command_utils::run_command;
 use rs_utils::{docker_utils, file_utils, log_utils};
@@ -162,15 +162,19 @@ fn reverse(names: &[&str]) -> Result<HashMap<String, Vec<String>>, Error> {
             let container_info_list: Vec<docker_utils::container_info::ContainerInfo> = serde_json::from_str(data.as_str())?;
             let mut command_map: HashMap<String, Vec<String>> = HashMap::new();
             for container_info in container_info_list {
-                match container_info.to_shell_command() {
-                    Ok(command) => {
-                        command_map.insert(container_info.Name, command);
-                    }
-                    Err(e) => {
-                        error!("{}", e);
-                        continue;
-                    }
-                }
+                let name=container_info.Name.clone();
+                let docker_command=docker_utils::container_info::DockerCommand::from(container_info);
+                let command=docker_command.to_command();
+                command_map.insert(name, command);
+                // match container_info.to_shell_command() {
+                //     Ok(command) => {
+                //         command_map.insert(container_info.Name, command);
+                //     }
+                //     Err(e) => {
+                //         error!("{}", e);
+                //         continue;
+                //     }
+                // }
             }
             Ok(command_map)
         }
