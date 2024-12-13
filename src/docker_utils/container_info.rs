@@ -112,7 +112,7 @@ impl ContainerInfo {
 }
 
 pub struct DockerCommand{
-    name: String,
+    container_name: String,
     privileged: bool,
     publish_all_ports: bool,
     auto_remove: bool,
@@ -127,7 +127,7 @@ pub struct DockerCommand{
 impl DockerCommand {
     pub fn from(info:ContainerInfo) ->Self{
         DockerCommand{
-            name: info.parse_container_name(),
+            container_name: info.parse_container_name(),
             privileged: info.parse_privileged(),
             publish_all_ports: info.parse_publish_all_ports(),
             auto_remove: info.parse_auto_remove(),
@@ -145,7 +145,7 @@ impl DockerCommand {
             vec!["docker".to_string(), "run".to_string(), "-d".to_string()];
         //添加容器名称
         command.push("--name".to_string());
-        command.push(self.name.clone());
+        command.push(self.container_name.clone());
         //是否添加高级权限
         if self.privileged {
             command.push("--privileged".to_string());
