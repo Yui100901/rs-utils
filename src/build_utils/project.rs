@@ -116,7 +116,7 @@ impl Project {
     }
 
     /// 初始化构建器
-    pub fn check_builder(&mut self) {
+    pub fn init_builder(&mut self) {
         let path_str = self.path.to_string();
         let file_types: Vec<(&str, Box<dyn Fn() -> Box<dyn builder::Builder>>)> = vec![
             (
@@ -183,6 +183,10 @@ impl Project {
     /// 构建项目
     pub fn build(&mut self) {
         std::env::set_current_dir(&self.path).unwrap();
+        if self.builder_vec.is_empty() {
+            error!("没有找到任何可构建的文件！");
+            return;
+        }
         for (_, builder) in self.builder_vec.iter() {
             builder.build().expect("构建出错");
         }

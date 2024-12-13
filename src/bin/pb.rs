@@ -111,12 +111,12 @@ fn main() {
     // } else {
     info!("顺序构建");
     let mut projects = &mut project_list;
-    projects.iter_mut().for_each(|builder| {
-        builder.get_source_code();
-        builder.check_builder();
-        builder.build();
+    projects.iter_mut().for_each(|project| {
+        project.get_source_code();
+        project.init_builder();
+        project.build();
         if deploy {
-            builder.deploy_to_docker();
+            project.deploy_to_docker();
         }
     });
     // }
