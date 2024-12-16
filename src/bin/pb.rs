@@ -1,15 +1,11 @@
-use clap::Parser;
-use log::{error, info};
-use rs_utils::build_utils::project::Project;
-use rs_utils::file_utils;
-use rs_utils::log_utils;
-use serde_yaml;
 use std::collections::HashMap;
+use std::fs;
 use std::io::Read;
 use std::path::Path;
-use std::sync::{Arc, Mutex};
-use std::{fs, thread};
-use toml::from_str;
+use clap::Parser;
+use log::info;
+use rs_utils::{file_utils, log_utils};
+use rs_utils::build_utils::project::Project;
 
 /// 命令行参数结构体
 #[derive(Parser, Debug)]
