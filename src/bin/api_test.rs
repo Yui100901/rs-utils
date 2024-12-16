@@ -1,6 +1,6 @@
 use reqwest;
-use std::error::Error;
 use rs_utils::http_utils;
+use std::error::Error;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -16,11 +16,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // 解析响应体为字符串
     let response_text = response.text().await?;
 
-    let http=http_utils::HttpUtils::new();
+    let http = http_utils::HttpUtils::new();
 
-    let s= http.get_by_query(api_url,None,None).await?;
+    let s = http.get_by_query(api_url, None, None).await?;
     println!("返回响应：{}", s);
-
 
     // 打印响应
     println!("Response: {}", response_text);

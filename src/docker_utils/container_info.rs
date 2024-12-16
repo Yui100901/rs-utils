@@ -1,7 +1,7 @@
+use serde::Deserialize;
 use std::collections::HashMap;
 use std::io::Error;
 use std::path::Path;
-use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
 struct Mount {
@@ -61,7 +61,7 @@ impl ContainerInfo {
     fn parse_user(&self) -> String {
         if let Some(user) = &self.Config.User {
             if !user.is_empty() {
-               return String::from(user);
+                return String::from(user);
             }
         }
         "".to_string()
@@ -73,7 +73,7 @@ impl ContainerInfo {
         Vec::new()
     }
     fn parse_mounts(&self) -> Vec<String> {
-        let mut mounts=Vec::new();
+        let mut mounts = Vec::new();
         for mount in &self.Mounts {
             if !Path::new(&mount.Destination).is_absolute() {
                 // 非绝对路径时挂载匿名卷
@@ -95,7 +95,7 @@ impl ContainerInfo {
         mounts
     }
     fn parse_port_bindings(&self) -> Vec<String> {
-       let mut port_bindings=Vec::new();
+        let mut port_bindings = Vec::new();
         for (port, bindings) in &self.HostConfig.PortBindings {
             for binding in bindings {
                 port_bindings.push(format!("{}:{}", binding.HostPort, port));
@@ -111,22 +111,22 @@ impl ContainerInfo {
     }
 }
 
-pub struct DockerCommand{
+pub struct DockerCommand {
     container_name: String,
     privileged: bool,
     publish_all_ports: bool,
     auto_remove: bool,
-    restart_policy:String,
-    user:String,
-    envs:Vec<String>,
-    mounts:Vec<String>,
-    port_bindings:Vec<String>,
-    image:String,
+    restart_policy: String,
+    user: String,
+    envs: Vec<String>,
+    mounts: Vec<String>,
+    port_bindings: Vec<String>,
+    image: String,
 }
 
 impl DockerCommand {
-    pub fn from(info:ContainerInfo) ->Self{
-        DockerCommand{
+    pub fn from(info: ContainerInfo) -> Self {
+        DockerCommand {
             container_name: info.parse_container_name(),
             privileged: info.parse_privileged(),
             publish_all_ports: info.parse_publish_all_ports(),
@@ -135,12 +135,12 @@ impl DockerCommand {
             user: info.parse_user(),
             envs: info.parse_envs(),
             mounts: info.parse_mounts(),
-            port_bindings:info.parse_port_bindings(),
+            port_bindings: info.parse_port_bindings(),
             image: info.parse_image(),
         }
     }
 
-    pub fn to_command(&self)->Vec<String> {
+    pub fn to_command(&self) -> Vec<String> {
         let mut command: Vec<String> =
             vec!["docker".to_string(), "run".to_string(), "-d".to_string()];
         //添加容器名称
@@ -174,7 +174,7 @@ impl DockerCommand {
             command.push(mount.to_string());
         }
         // 添加端口映射
-        for port_binding in &self.port_bindings{
+        for port_binding in &self.port_bindings {
             command.push("-p".to_string());
             command.push(port_binding.to_string());
         }

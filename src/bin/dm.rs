@@ -154,17 +154,17 @@ fn export(path: &str) -> Result<String, Error> {
     Ok("Export success!".to_string())
 }
 
-
-
 fn reverse(names: &[&str]) -> Result<HashMap<String, Vec<String>>, Error> {
     match docker_utils::container_inspect(names) {
         Ok(data) => {
-            let container_info_list: Vec<docker_utils::container_info::ContainerInfo> = serde_json::from_str(data.as_str())?;
+            let container_info_list: Vec<docker_utils::container_info::ContainerInfo> =
+                serde_json::from_str(data.as_str())?;
             let mut command_map: HashMap<String, Vec<String>> = HashMap::new();
             for container_info in container_info_list {
-                let name=container_info.Name.clone();
-                let docker_command=docker_utils::container_info::DockerCommand::from(container_info);
-                let command=docker_command.to_command();
+                let name = container_info.Name.clone();
+                let docker_command =
+                    docker_utils::container_info::DockerCommand::from(container_info);
+                let command = docker_command.to_command();
                 command_map.insert(name, command);
                 // match container_info.to_shell_command() {
                 //     Ok(command) => {
