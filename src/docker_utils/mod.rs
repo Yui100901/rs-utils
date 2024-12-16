@@ -1,9 +1,8 @@
 pub mod container_info;
 
 use crate::command_utils;
-use log::{error, info};
+use log::info;
 use std::io::Error;
-use std::process::Command;
 
 pub fn docker_run_command(args: &[&str]) -> Result<String, Error> {
     info!("执行自定义docker命令");

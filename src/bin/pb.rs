@@ -106,7 +106,7 @@ fn main() {
     //     }
     // } else {
     info!("顺序构建");
-    let mut projects = &mut project_list;
+    let projects = &mut project_list;
     projects.iter_mut().for_each(|project| {
         project.get_source_code();
         project.init_builder();

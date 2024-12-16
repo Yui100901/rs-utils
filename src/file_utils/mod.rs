@@ -1,11 +1,11 @@
 pub mod file_data;
 
 use crate::file_utils::file_data::FileData;
-use log::{error, info};
+use log::error;
 use std::error::Error;
 use std::fs;
 use std::io;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 /// 遍历给定目录并返回文件路径列表
 /// `recursive` 参数表明是否递归遍历子目录
